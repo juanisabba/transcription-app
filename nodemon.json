@@ -1,0 +1,10 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "ignore": ["src/**/*.test.ts", "dist", "node_modules"],
+  "exec": "cd api && serverless offline start",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 500
+}
