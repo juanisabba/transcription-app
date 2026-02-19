@@ -1,0 +1,304 @@
+service: vocali-api
+
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION, 'eu-west-1'}
+  stage: ${env:STAGE, 'dev'}
+  apiGateway:
+    shouldStartNameWithService: true
+  memorySize: 512
+  timeout: 30
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+            - dynamodb:ConditionCheckItem
+          Resource:
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-users-${self:provider.stage}"
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-users-${self:provider.stage}/index/*"
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-transcriptions-${self:provider.stage}"
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-transcriptions-${self:provider.stage}/index/*"
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-job-mapping-${self:provider.stage}"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - !Sub "arn:aws:s3:::vocali-transcriptions-${self:provider.stage}"
+            - !Sub "arn:aws:s3:::vocali-transcriptions-${self:provider.stage}/*"
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminConfirmSignUp
+          Resource:
+            - !GetAtt CognitoUserPool.Arn
+
+  environment:
+    STAGE: ${self:provider.stage}
+    DYNAMODB_USERS_TABLE: vocali-users-${self:provider.stage}
+    DYNAMODB_TRANSCRIPTIONS_TABLE: vocali-transcriptions-${self:provider.stage}
+    DYNAMODB_JOB_MAPPING_TABLE: vocali-job-mapping-${self:provider.stage}
+    S3_BUCKET_NAME: vocali-transcriptions-${self:provider.stage}
+    SPEECHMATICS_API_KEY: ${env:SPEECHMATICS_API_KEY, ''}
+    SPEECHMATICS_WEBHOOK_URL: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
+    SPEECHMATICS_MANAGEMENT_URL: ${env:SPEECHMATICS_MANAGEMENT_URL, 'https://mp.speechmatics.com/v1'}
+    SPEECHMATICS_RT_WS_URL: ${env:SPEECHMATICS_RT_WS_URL, 'wss://eu2.rt.speechmatics.com/v2/'}
+    AWS_REGION: ${self:provider.region}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
+    COGNITO_AUTO_CONFIRM: ${env:COGNITO_AUTO_CONFIRM, 'false'}
+
+functions:
+  # ===== HELLO (Test Endpoint) =====
+  hello:
+    handler: dist/api/src/index.handler
+    events:
+      - http:
+          path: hello
+          method: get
+          cors: true
+
+  # ===== AUTH ENDPOINTS =====
+
+  register:
+    handler: dist/src/presentation/http/auth/RegisterHandler.handler
+    events:
+      - http:
+          path: auth/register
+          method: post
+          cors: true
+
+  login:
+    handler: dist/src/presentation/http/auth/LoginHandler.handler
+    events:
+      - http:
+          path: auth/login
+          method: post
+          cors: true
+
+  logout:
+    handler: dist/src/presentation/http/auth/LogoutHandler.handler
+    events:
+      - http:
+          path: auth/logout
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  # ===== TRANSCRIPTION ENDPOINTS =====
+
+  uploadTranscription:
+    handler: dist/src/presentation/http/transcription/UploadHandler.handler
+    events:
+      - http:
+          path: transcriptions/upload
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  realtimeSession:
+    handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
+    events:
+      - http:
+          path: transcriptions/realtime
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  listTranscriptions:
+    handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
+    events:
+      - http:
+          path: transcriptions
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  downloadTranscription:
+    handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
+    events:
+      - http:
+          path: transcriptions/{id}/download
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  # ===== S3 EVENT TRIGGERS =====
+
+  processAudioUpload:
+    handler: dist/src/presentation/events/S3UploadHandler.handler
+    events:
+      - s3:
+          bucket: !Ref TranscriptionsBucket
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploads/
+          existing: true
+
+  # ===== WEBHOOKS =====
+
+  speechmaticsWebhook:
+    handler: dist/src/presentation/events/WebhookHandler.handler
+    events:
+      - http:
+          path: webhook/speechmatics
+          method: post
+
+build:
+  esbuild: true
+
+plugins:
+  - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-dotenv-plugin
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: vocali-users-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: email-index
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    TranscriptionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: vocali-transcriptions-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: id
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: status-index
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    JobMappingTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: vocali-job-mapping-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: jobId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: jobId
+            KeyType: HASH
+
+    TranscriptionsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: vocali-transcriptions-${self:provider.stage}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: vocali-users-${self:provider.stage}
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireUppercase: true
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireSymbols: false
+        Schema:
+          - Name: email
+            AttributeDataType: String
+            Required: true
+            Mutable: true
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: vocali-app-client-${self:provider.stage}
+        UserPoolId: !Ref CognitoUserPool
+        ExplicitAuthFlows:
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        GenerateSecret: false
+        TokenValidityUnits:
+          AccessToken: hours
+          RefreshToken: days
+        AccessTokenValidity: 1
+        RefreshTokenValidity: 30
+
+custom:
+  dynamodb:
+    stages:
+      - local
+      - dev
+    start:
+      host: localhost
+      port: 8000
+      region: localhost
+      accessKeyId: local
+      secretAccessKey: local
+      inMemory: true
+      migrate: false
+      noStart: true
+
+  serverless-offline:
+    httpPort: 3001
+    host: '0.0.0.0'
+    noPrependStageInUrl: true
+    # Para desarrollo local sin Cognito: serverless offline --noAuth
