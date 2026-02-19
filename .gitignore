@@ -62,3 +62,17 @@ client/.pnpm-store/
 **/cypress/downloads/
 **/__pycache__/
 .pytest_cache/
+
+# --- Multimedia (Evitar audios pesados en el repo) ---
+*.mp3
+*.ogg
+*.wav
+*.m4a
+
+# --- Debugging y Scripts temporales ---
+debug-dynamo.js
+scripts/temp/
+
+# --- Otros binarios ---
+*.zip
+*.rar
