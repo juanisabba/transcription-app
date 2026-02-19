@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "rootDirs": ["./src", "../src"],
+    "baseUrl": ".",
+    "paths": {
+      "@domain/entities/*": ["./src/domain/entities/*", "../src/domain/entities/*"],
+      "@domain/repositories/*": ["./src/domain/repositories/*", "../src/domain/repositories/*"],
+      "@domain/services/*": ["../src/domain/services/*"],
+      "@domain/exceptions": ["../src/domain/exceptions"],
+      "@domain/exceptions/*": ["../src/domain/exceptions/*"],
+      "@domain/value-objects/*": ["../src/domain/value-objects/*"],
+      "@domain/*": ["../src/domain/*"],
+      "@application/*": ["../src/application/*"],
+      "@infrastructure/*": ["../src/infrastructure/*", "./src/infrastructure/*"],
+      "@presentation/*": ["../src/presentation/*"],
+      "@shared/*": ["../src/shared/*"],
+      "uuid": ["./node_modules/uuid"],
+      "@aws-sdk/client-dynamodb": ["./node_modules/@aws-sdk/client-dynamodb"],
+      "@aws-sdk/lib-dynamodb": ["./node_modules/@aws-sdk/lib-dynamodb"]
+    }
+  },
+  "include": ["src/**/*", "src/types/**/*", "../src/**/*", "../tests/**/*"]
+}

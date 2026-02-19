@@ -1,0 +1,37 @@
+{
+  "name": "transcription-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Transcription Service",
+  "scripts": {
+    "setup:local-db": "ts-node scripts/setup-local-db.ts",
+    "dev:api": "pnpm --filter api run dev",
+    "dev:client": "pnpm --filter client run dev",
+    "dev": "concurrently \"pnpm:dev:api\" \"pnpm:dev:client\"",
+    "build": "pnpm --filter api run build && pnpm --filter client run build",
+    "test": "pnpm --filter api run test",
+    "lint": "pnpm --filter api run lint && pnpm --filter client run lint",
+    "type-check": "pnpm --filter api run type-check && pnpm --filter client run type-check"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.400.0",
+    "@aws-sdk/client-dynamodb": "^3.400.0",
+    "@aws-sdk/lib-dynamodb": "^3.400.0",
+    "@types/aws-lambda": "^8.10.130",
+    "@types/node": "^20.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/uuid": "^9.0.8",
+    "concurrently": "^8.0.0",
+    "nodemon": "^3.1.11",
+    "ts-node": "^10.9.0",
+    "jsonwebtoken": "^9.0.3",
+    "uuid": "^9.0.0"
+  },
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

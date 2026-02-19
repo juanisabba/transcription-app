@@ -1,0 +1,64 @@
+# --- Dependencias y Entorno (Recursivo para api/ y client/) ---
+/node_modules
+node_modules
+**/node_modules
+api/node_modules
+client/node_modules
+.env
+/.env
+api/.env
+**/.env
+**/.env.*
+!**/.env.example
+**/.pnpm-debug.log*
+
+api/dist
+# --- General / OS ---
+.DS_Store
+*.log
+dist/
+build/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- TypeScript / JavaScript ---
+*.tsbuildinfo
+lib-cov
+**/coverage/
+.nyc_output
+.eslintcache
+
+# --- API (Backend - Serverless) ---
+api/.serverless/
+api/.esbuild/
+api/.dynamodb/
+api/.webpack/
+api/.auth/
+api/.offline-nosql.db
+# Si usas el plugin de almacenamiento local para Dynamo
+api/*.db
+
+# --- Client (Frontend - Nuxt 3) ---
+client/.nuxt/
+client/.output/
+client/.nitro/
+client/.cache/
+client/dist-client/
+# Archivos temporales de build de Vite/Nuxt
+client/.pnpm-store/
+
+# --- IDEs / Editors ---
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# --- Testing (E2E y Unit) ---
+**/cypress/screenshots/
+**/cypress/videos/
+**/cypress/downloads/
+**/__pycache__/
+.pytest_cache/
