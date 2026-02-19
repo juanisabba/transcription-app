@@ -1,0 +1,1 @@
+export { CognitoAuthAdapter } from './CognitoAuthAdapter';
