@@ -62,4 +62,15 @@ export interface ITranscriptionRepository {
    * @returns Una promesa que se resuelve cuando la actualización se ha aplicado.
    */
   update(transcription: Transcription): Promise<void>;
+
+  /**
+   * Elimina una transcripción del almacenamiento.
+   *
+   * Solo elimina si el userId coincide (aislamiento multi-tenant).
+   *
+   * @param id - Identificador único de la transcripción.
+   * @param userId - Identificador del usuario propietario.
+   * @returns Una promesa que se resuelve cuando la eliminación se ha aplicado.
+   */
+  delete(id: string, userId: string): Promise<void>;
 }

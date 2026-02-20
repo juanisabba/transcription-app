@@ -1,5 +1,6 @@
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import {
+  DeleteCommand,
   GetCommand,
   PutCommand,
   QueryCommand,
@@ -119,6 +120,20 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       return { items, hasMore, nextCursor };
     } catch (error) {
       console.error("Error finding transcriptions by userId:", error);
+      throw error;
+    }
+  }
+
+  async delete(id: string, userId: string): Promise<void> {
+    try {
+      await this.dynamodbClient.send(
+        new DeleteCommand({
+          TableName: this.tableName,
+          Key: { userId, id },
+        })
+      );
+    } catch (error) {
+      console.error("Error deleting transcription:", error);
       throw error;
     }
   }

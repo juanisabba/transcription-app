@@ -20,6 +20,7 @@ provider:
             - dynamodb:GetItem
             - dynamodb:PutItem
             - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
             - dynamodb:Query
             - dynamodb:ConditionCheckItem
           Resource:
@@ -50,6 +51,7 @@ provider:
     S3_BUCKET_NAME: vocali-transcriptions-${self:provider.stage}
     SPEECHMATICS_API_KEY: ${env:SPEECHMATICS_API_KEY, ''}
     SPEECHMATICS_WEBHOOK_URL: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
+    SPEECHMATICS_WEBHOOK_SECRET: ${env:SPEECHMATICS_WEBHOOK_SECRET, ''}
     SPEECHMATICS_MANAGEMENT_URL: ${env:SPEECHMATICS_MANAGEMENT_URL, 'https://mp.speechmatics.com/v1'}
     SPEECHMATICS_RT_WS_URL: ${env:SPEECHMATICS_RT_WS_URL, 'wss://eu2.rt.speechmatics.com/v2/'}
     AWS_REGION: ${self:provider.region}
@@ -123,6 +125,18 @@ functions:
             providerARNs:
               - !GetAtt CognitoUserPool.Arn
 
+  saveRealtimeTranscription:
+    handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
+    events:
+      - http:
+          path: transcriptions/realtime/{id}/save
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
   listTranscriptions:
     handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
     events:
@@ -141,6 +155,18 @@ functions:
       - http:
           path: transcriptions/{id}/download
           method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  deleteTranscription:
+    handler: dist/src/presentation/http/transcription/DeleteHandler.handler
+    events:
+      - http:
+          path: transcriptions/{id}
+          method: delete
           cors: true
           authorizer:
             type: COGNITO_USER_POOLS
@@ -298,7 +324,7 @@ custom:
       noStart: true
 
   serverless-offline:
-    httpPort: 3001
-    host: '0.0.0.0'
+    httpPort: 8080
+    host: "0.0.0.0"
     noPrependStageInUrl: true
     # Para desarrollo local sin Cognito: serverless offline --noAuth

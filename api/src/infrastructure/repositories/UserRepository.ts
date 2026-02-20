@@ -42,7 +42,7 @@ export class UserRepository implements IUserRepository {
         new GetCommand({
           TableName: this.tableName,
           Key: {
-            id: id, // <--- CAMBIADO: de userId a id
+            id: id,
           },
         })
       );
@@ -60,14 +60,11 @@ export class UserRepository implements IUserRepository {
 
   async save(user: User): Promise<void> {
     try {
-      // Nota: El check de findByEmail ya lo hace el Use Case,
-      // pero se mantiene aquí por seguridad si así lo deseas.
-
       await this.dynamodbClient.send(
         new PutCommand({
           TableName: this.tableName,
           Item: {
-            id: user.id, // <--- CAMBIADO: de userId a id para coincidir con la tabla
+            id: user.id,
             email: user.email,
             passwordHash: user.passwordHash,
             createdAt: user.createdAt.getTime(),
@@ -95,7 +92,7 @@ export class UserRepository implements IUserRepository {
         new UpdateCommand({
           TableName: this.tableName,
           Key: {
-            id: id, // <--- CAMBIADO: de userId a id
+            id: id,
           },
           UpdateExpression: "SET lastLoginAt = :now, updatedAt = :now",
           ExpressionAttributeValues: {
@@ -113,7 +110,7 @@ export class UserRepository implements IUserRepository {
 
   private mapToDomain(item: Record<string, unknown>): User {
     return new User(
-      item.id as string, // <--- CAMBIADO: de userId a id
+      item.id as string,
       item.email as string,
       item.passwordHash as string,
       new Date(item.createdAt as number)
