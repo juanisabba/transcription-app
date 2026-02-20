@@ -15,6 +15,12 @@ export interface UploadTranscriptionDTO {
    * Debe ser <= 20 MB según requisitos.
    */
   fileSize: number;
+
+  /**
+   * Content-Type MIME del archivo (opcional).
+   * Debe ser audio/* (audio/mp3, audio/ogg, audio/wav, etc.).
+   */
+  contentType?: string;
 }
 
 /**

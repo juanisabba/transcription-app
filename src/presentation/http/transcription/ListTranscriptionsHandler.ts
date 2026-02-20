@@ -42,11 +42,12 @@ export const handler: APIGatewayProxyHandler = async (
     const claims = await authService.validateToken(token);
     const userId = claims.sub;
 
-    const cursor = event.queryStringParameters?.cursor ?? undefined;
-    const limitParam = event.queryStringParameters?.limit;
-    const limit = limitParam ? parseInt(limitParam, 10) : 10;
+    const pageParam = event.queryStringParameters?.page;
+    const pageSizeParam = event.queryStringParameters?.pageSize;
+    const page = pageParam ? parseInt(pageParam, 10) : 1;
+    const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : 10;
 
-    const result = await useCase.execute(userId, cursor, limit);
+    const result = await useCase.execute(userId, page, pageSize);
 
     return {
       statusCode: 200,
@@ -60,7 +61,8 @@ export const handler: APIGatewayProxyHandler = async (
           content: t.status === "completed" ? t.content : undefined,
         })),
         hasMore: result.hasMore,
-        nextCursor: result.nextCursor,
+        totalPages: result.totalPages,
+        currentPage: result.currentPage,
       }),
       headers: corsHeaders,
     };

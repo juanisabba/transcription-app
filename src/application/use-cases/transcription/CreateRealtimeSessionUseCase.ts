@@ -1,4 +1,7 @@
 import type { IExternalApiService } from "@application/ports/IExternalApiService";
+import type { ITranscriptionRepository } from "@domain/repositories/ITranscriptionRepository";
+import { Transcription } from "@domain/entities/Transcription";
+import { v4 as uuid } from "uuid";
 
 const REALTIME_TOKEN_TTL = 60; // seconds — minimum allowed by Speechmatics
 
@@ -9,35 +12,52 @@ export interface RealtimeSessionDTO {
   wsUrl: string;
   /** Token TTL in seconds so the client knows when it expires. */
   ttl: number;
+  /** ID de la transcripción creada en estado 'pending'. El cliente debe llamar POST /transcriptions/realtime/{id}/save al terminar para persistir. */
+  transcriptionId: string;
 }
 
 /**
  * Caso de uso que crea una sesión temporal para transcripción en tiempo real.
  *
- * En lugar de exponer la API key principal al frontend, este caso de uso
- * solicita a la API de gestión de Speechmatics un JWT de corta duración
- * (TTL mínimo: 60s) que el navegador puede usar directamente para abrir
- * una conexión WebSocket con el servicio de transcripción en tiempo real.
+ * Crea un registro Transcription en estado 'pending' para que el historial
+ * pueda incluir la sesión una vez el cliente llame a SaveRealtimeTranscription
+ * con el contenido transcrito.
  *
  * Flujo:
  * 1. Frontend llama a POST /transcriptions/realtime (con Bearer token de Cognito).
- * 2. Este use case obtiene el token temporal de Speechmatics Management API.
- * 3. Devuelve { token, wsUrl, ttl } al frontend.
- * 4. Frontend conecta al WebSocket de Speechmatics usando ese token.
- * 5. El token expira automáticamente tras `ttl` segundos.
+ * 2. Este use case crea Transcription pending, obtiene token de Speechmatics.
+ * 3. Devuelve { token, wsUrl, ttl, transcriptionId } al frontend.
+ * 4. Frontend conecta al WebSocket, transcribe, y al terminar llama POST /transcriptions/realtime/{id}/save con { content }.
  */
 export class CreateRealtimeSessionUseCase {
   constructor(
-    private readonly externalApiService: IExternalApiService
+    private readonly externalApiService: IExternalApiService,
+    private readonly transcriptionRepository: ITranscriptionRepository
   ) {}
 
   /**
-   * Genera un token temporal para la Speechmatics Realtime API.
+   * Genera un token temporal y crea un registro de transcripción pending.
    *
-   * @returns DTO con el token, la URL del WebSocket y el TTL en segundos.
+   * @param userId - ID del usuario autenticado.
+   * @returns DTO con token, wsUrl, ttl y transcriptionId.
    * @throws Error Si la creación del token falla en Speechmatics.
    */
-  public async execute(): Promise<RealtimeSessionDTO> {
+  public async execute(userId: string): Promise<RealtimeSessionDTO> {
+    const transcriptionId = uuid();
+    const now = new Date();
+    const transcription = new Transcription(
+      transcriptionId,
+      userId,
+      "realtime-session",
+      0,
+      "pending",
+      "",
+      "",
+      now,
+      now
+    );
+    await this.transcriptionRepository.save(transcription);
+
     const { token, wsUrl } = await this.externalApiService.createRealtimeToken(
       REALTIME_TOKEN_TTL
     );
@@ -46,6 +66,7 @@ export class CreateRealtimeSessionUseCase {
       token,
       wsUrl,
       ttl: REALTIME_TOKEN_TTL,
+      transcriptionId,
     };
   }
 }

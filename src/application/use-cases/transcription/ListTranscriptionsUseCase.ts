@@ -2,19 +2,20 @@ import type { ITranscriptionRepository } from "@domain/repositories/ITranscripti
 import type { Transcription } from "@domain/entities/Transcription";
 
 const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 10;
 
 export interface ListTranscriptionsResult {
   items: Transcription[];
   hasMore: boolean;
-  nextCursor?: string;
-  page: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 /**
  * Caso de uso para listar el historial de transcripciones de un usuario.
  *
- * Implementa paginación por cursor (DynamoDB LastEvaluatedKey) con un
- * tamaño de página fijo de 10 elementos.
+ * Implementa paginación por página (page, pageSize) iterando internamente
+ * con cursor de DynamoDB para alcanzar la página solicitada.
  */
 export class ListTranscriptionsUseCase {
   constructor(
@@ -22,28 +23,56 @@ export class ListTranscriptionsUseCase {
   ) {}
 
   /**
-   * Lista las transcripciones del usuario con paginación.
+   * Lista las transcripciones del usuario con paginación por página.
    *
    * @param userId - ID del usuario autenticado.
-   * @param cursor - Cursor de la página siguiente (opcional).
-   * @param limit - Número de elementos por página (por defecto 10).
-   * @returns Lista paginada de transcripciones.
+   * @param page - Número de página (1-based).
+   * @param pageSize - Elementos por página (máx. 10).
+   * @returns Lista paginada con items, hasMore, totalPages, currentPage.
    */
   public async execute(
     userId: string,
-    cursor?: string,
-    limit: number = DEFAULT_PAGE_SIZE
+    page: number = 1,
+    pageSize: number = DEFAULT_PAGE_SIZE
   ): Promise<ListTranscriptionsResult> {
-    const pageSize = Math.min(Math.max(1, limit), DEFAULT_PAGE_SIZE);
+    const size = Math.min(Math.max(1, pageSize), MAX_PAGE_SIZE);
+    const requestedPage = Math.max(1, page);
 
-    const { items, hasMore, nextCursor } =
-      await this.transcriptionRepository.findByUserId(userId, pageSize, cursor);
+    let cursor: string | undefined;
+    let currentBatch: {
+      items: Transcription[];
+      hasMore: boolean;
+      nextCursor?: string;
+    };
+
+    for (let i = 0; i < requestedPage; i++) {
+      currentBatch = await this.transcriptionRepository.findByUserId(
+        userId,
+        size,
+        cursor
+      );
+      if (i < requestedPage - 1) {
+        if (!currentBatch.hasMore || !currentBatch.nextCursor) {
+          return {
+            items: [],
+            hasMore: false,
+            totalPages: requestedPage - 1 || 1,
+            currentPage: requestedPage,
+          };
+        }
+        cursor = currentBatch.nextCursor;
+      }
+    }
+
+    const totalPages = currentBatch!.hasMore
+      ? requestedPage + 1
+      : requestedPage;
 
     return {
-      items,
-      hasMore,
-      nextCursor,
-      page: pageSize,
+      items: currentBatch!.items,
+      hasMore: currentBatch!.hasMore,
+      totalPages,
+      currentPage: requestedPage,
     };
   }
 }

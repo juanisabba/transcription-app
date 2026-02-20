@@ -1,8 +1,21 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { APIGatewayProxyHandler, APIGatewayProxyResult } from "aws-lambda";
 import { ProcessTranscriptionResultUseCase } from "../../application/use-cases/transcription/ProcessTranscriptionResultUseCase";
 import { transcriptionRepository } from "../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance";
 import { jobMappingRepository } from "../../../api/src/infrastructure/repositories/jobMappingRepositoryInstance";
 import { speechMaticsAdapter } from "../../../api/src/infrastructure/adapters/external-services/speechMaticsAdapterInstance";
+
+function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
+  const expected = createHmac("sha256", secret)
+    .update(body, "utf8")
+    .digest("hex");
+  if (expected.length !== signature.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(signature, "hex"));
+  } catch {
+    return false;
+  }
+}
 
 const useCase = new ProcessTranscriptionResultUseCase(
   transcriptionRepository,
@@ -48,6 +61,19 @@ export const handler: APIGatewayProxyHandler = async (
   try {
     if (!event.body) {
       return jsonResponse(400, { error: "Missing request body" });
+    }
+
+    const webhookSecret = process.env.SPEECHMATICS_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const hdrs = event.headers ?? {};
+      const signature = hdrs["X-Webhook-Signature"] ?? hdrs["x-webhook-signature"];
+      if (!signature || typeof signature !== "string") {
+        return jsonResponse(401, { error: "Missing X-Webhook-Signature header" });
+      }
+      const sig = signature.startsWith("sha256=") ? signature.slice(7) : signature;
+      if (!verifyWebhookSignature(event.body, sig, webhookSecret)) {
+        return jsonResponse(401, { error: "Invalid webhook signature" });
+      }
     }
 
     let parsed: SpeechmaticsWebhookBody;

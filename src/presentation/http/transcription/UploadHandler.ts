@@ -6,7 +6,7 @@ import { storageService } from "../../../../api/src/infrastructure/adapters/stor
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, ValidationError, UnauthorizedError } from "../../../shared/errors";
-import { FileTooLargeException } from "../../../domain/exceptions";
+import { FileTooLargeException, InvalidFileTypeException } from "../../../domain/exceptions";
 
 const corsHeaders = {
   "Content-Type": "application/json",
@@ -52,22 +52,34 @@ export const handler: APIGatewayProxyHandler = async (
     const request: UploadTranscriptionDTO = {
       fileName: typeof body.fileName === "string" ? body.fileName : "",
       fileSize: typeof body.fileSize === "number" ? body.fileSize : 0,
+      contentType: typeof body.contentType === "string" ? body.contentType : undefined,
     };
 
     const result = await useCase.execute(userId, request);
 
     return {
-      statusCode: 200,
-      body: JSON.stringify(result),
+      statusCode: 202,
+      body: JSON.stringify({
+        id: result.transcriptionId,
+        uploadUrl: result.uploadUrl,
+        status: "pending",
+        expiresIn: result.expiresIn,
+      }),
       headers: corsHeaders,
     };
   } catch (error) {
     console.error("UploadHandler error:", error);
 
-    if (error instanceof AppError) {
+    if (
+      error instanceof InvalidFileTypeException ||
+      (error instanceof Error && error.name === "InvalidFileTypeException")
+    ) {
       return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message }),
+        statusCode: 400,
+        body: JSON.stringify({
+          code: "INVALID_FILE_TYPE",
+          message: (error as Error).message,
+        }),
         headers: corsHeaders,
       };
     }
@@ -75,14 +87,6 @@ export const handler: APIGatewayProxyHandler = async (
     if (error instanceof UnauthorizedError) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
-    }
-
-    if (error instanceof ValidationError) {
-      return {
-        statusCode: 400,
         body: JSON.stringify({ code: error.code, message: error.message }),
         headers: corsHeaders,
       };
@@ -99,13 +103,18 @@ export const handler: APIGatewayProxyHandler = async (
       };
     }
 
-    if (error instanceof Error && error.name === "ValidationError") {
+    if (error instanceof AppError) {
+      return {
+        statusCode: error.statusCode,
+        body: JSON.stringify({ code: error.code, message: error.message }),
+        headers: corsHeaders,
+      };
+    }
+
+    if (error instanceof ValidationError) {
       return {
         statusCode: 400,
-        body: JSON.stringify({
-          code: "VALIDATION_ERROR",
-          message: error.message,
-        }),
+        body: JSON.stringify({ code: error.code, message: error.message }),
         headers: corsHeaders,
       };
     }

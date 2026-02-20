@@ -1,10 +1,9 @@
 import type { APIGatewayProxyHandler, APIGatewayProxyResult } from "aws-lambda";
-import { CreateRealtimeSessionUseCase } from "../../../application/use-cases/transcription/CreateRealtimeSessionUseCase";
-import { speechMaticsAdapter } from "../../../../api/src/infrastructure/adapters/external-services/speechMaticsAdapterInstance";
+import { SaveRealtimeTranscriptionUseCase } from "../../../application/use-cases/transcription/SaveRealtimeTranscriptionUseCase";
 import { transcriptionRepository } from "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance";
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
-import { AppError, UnauthorizedError } from "../../../shared/errors";
+import { AppError, NotFoundError, UnauthorizedError } from "../../../shared/errors";
 
 const corsHeaders = {
   "Content-Type": "application/json",
@@ -12,10 +11,7 @@ const corsHeaders = {
 };
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
-const useCase = new CreateRealtimeSessionUseCase(
-  speechMaticsAdapter,
-  transcriptionRepository
-);
+const useCase = new SaveRealtimeTranscriptionUseCase(transcriptionRepository);
 
 function getBearerToken(
   event: { headers?: Record<string, string | undefined> }
@@ -28,17 +24,10 @@ function getBearerToken(
 }
 
 /**
- * POST /transcriptions/realtime
+ * POST /transcriptions/realtime/{id}/save
  *
- * Crea un token temporal de Speechmatics Realtime API para que el cliente
- * pueda abrir una conexión WebSocket directa sin exponer la API key principal.
- *
- * Respuesta:
- * {
- *   "token": "<short-lived JWT>",
- *   "wsUrl": "wss://eu2.rt.speechmatics.com/v2/",
- *   "ttl": 60
- * }
+ * Persiste el contenido de una sesión de transcripción en tiempo real.
+ * El cliente debe llamar este endpoint al terminar la sesión WebSocket.
  */
 export const handler: APIGatewayProxyHandler = async (
   event
@@ -59,15 +48,30 @@ export const handler: APIGatewayProxyHandler = async (
     const claims = await authService.validateToken(token);
     const userId = claims.sub;
 
-    const result = await useCase.execute(userId);
+    const transcriptionId = event.pathParameters?.id;
+    if (!transcriptionId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          code: "VALIDATION_ERROR",
+          message: "Missing transcription id in path",
+        }),
+        headers: corsHeaders,
+      };
+    }
+
+    const body = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
+    const content = typeof body.content === "string" ? body.content : "";
+
+    await useCase.execute(transcriptionId, userId, content);
 
     return {
       statusCode: 200,
-      body: JSON.stringify(result),
+      body: JSON.stringify({ ok: true }),
       headers: corsHeaders,
     };
   } catch (error) {
-    console.error("RealtimeSessionHandler error:", error);
+    console.error("SaveRealtimeTranscriptionHandler error:", error);
 
     if (
       error instanceof UnauthorizedError ||
@@ -79,6 +83,14 @@ export const handler: APIGatewayProxyHandler = async (
           code: "UNAUTHORIZED",
           message: "Invalid or expired token",
         }),
+        headers: corsHeaders,
+      };
+    }
+
+    if (error instanceof NotFoundError) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ code: error.code, message: error.message }),
         headers: corsHeaders,
       };
     }

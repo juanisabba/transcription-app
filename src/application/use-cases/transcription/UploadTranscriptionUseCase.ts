@@ -3,7 +3,11 @@ import type { IStorageService } from "@application/ports/IStorageService";
 import type { UploadTranscriptionDTO, PresignedUrlDTO } from "@application/dto/transcription";
 import { Transcription } from "@domain/entities/Transcription";
 import { ValidationError } from "@shared/errors";
+import { InvalidFileTypeException } from "@domain/exceptions/InvalidFileTypeException";
 import { v4 as uuid } from "uuid";
+
+/** Content-Type debe ser audio/* (audio/mp3, audio/ogg, audio/wav, etc.). */
+const AUDIO_MIME_PREFIX = "audio/";
 
 const PRESIGNED_URL_EXPIRES_IN = 3600; // 1 hour
 
@@ -42,7 +46,7 @@ export class UploadTranscriptionUseCase {
     userId: string,
     request: UploadTranscriptionDTO
   ): Promise<PresignedUrlDTO> {
-    const { fileName, fileSize } = request;
+    const { fileName, fileSize, contentType } = request;
 
     // Paso 1: Validar request
     if (!fileName || typeof fileName !== "string" || !fileName.trim()) {
@@ -51,6 +55,13 @@ export class UploadTranscriptionUseCase {
 
     if (typeof fileSize !== "number") {
       throw new ValidationError("fileSize must be a number");
+    }
+
+    if (contentType !== undefined && contentType !== null && contentType !== "") {
+      const ct = typeof contentType === "string" ? contentType.trim().toLowerCase() : "";
+      if (!ct.startsWith(AUDIO_MIME_PREFIX)) {
+        throw new InvalidFileTypeException(contentType);
+      }
     }
 
     if (fileSize > MAX_FILE_SIZE_BYTES) {
