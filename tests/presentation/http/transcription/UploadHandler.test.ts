@@ -53,7 +53,7 @@ describe("UploadHandler", () => {
       resource: "",
     }) as APIGatewayProxyEvent;
 
-  it("returns 200 with uploadUrl on successful request", async () => {
+  it("returns 202 with id, uploadUrl, status and expiresIn on successful request", async () => {
     const event = createEvent({
       fileName: "audio.mp3",
       fileSize: 1024 * 1024,
@@ -62,10 +62,27 @@ describe("UploadHandler", () => {
     const result = await handler(event, ctx, () => {});
 
     expect(result).toBeDefined();
-    expect(result!.statusCode).toBe(200);
+    expect(result!.statusCode).toBe(202);
     const parsed = JSON.parse(result!.body ?? "{}");
+    expect(parsed.id).toBeDefined();
     expect(parsed.uploadUrl).toBe("https://s3.example.com/presigned");
-    expect(parsed.transcriptionId).toBeDefined();
+    expect(parsed.status).toBe("pending");
+    expect(parsed.expiresIn).toBe(3600);
+  });
+
+  it("returns 400 when contentType is not audio/*", async () => {
+    const event = createEvent({
+      fileName: "video.mp4",
+      fileSize: 1024,
+      contentType: "video/mp4",
+    });
+    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
+    const result = await handler(event, ctx, () => {});
+
+    expect(result).toBeDefined();
+    expect(result!.statusCode).toBe(400);
+    const parsed = JSON.parse(result!.body ?? "{}");
+    expect(parsed.code).toBe("INVALID_FILE_TYPE");
   });
 
   it("returns 401 when Authorization header is missing", async () => {
