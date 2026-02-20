@@ -18,7 +18,7 @@ interface TranscriptionItem {
   userId: string;
   id: string;
   fileName: string;
-  fileSize?: number; // Number (no string) para analíticas. Opcional por compatibilidad con items antiguos.
+  fileSize?: number;
   status: TranscriptionStatus;
   s3Path: string;
   content: string;
@@ -31,7 +31,7 @@ interface TranscriptionItem {
  *
  * Persists transcriptions in vocali-transcriptions-{stage}.
  * Uses process.env.DYNAMODB_TRANSCRIPTIONS_TABLE (e.g. vocali-transcriptions-dev)
- * to avoid ResourceNotFoundException. Primary Key: userId (HASH) + id (RANGE).
+ * Primary Key: userId (HASH) + id (RANGE).
  * GSI: status-index for queries by status.
  */
 export class TranscriptionRepository implements ITranscriptionRepository {
@@ -42,18 +42,24 @@ export class TranscriptionRepository implements ITranscriptionRepository {
 
   async save(transcription: Transcription): Promise<void> {
     try {
+      console.log(`[TranscriptionRepo] Saving: ${transcription.id}`);
+
       await this.dynamodbClient.send(
         new PutCommand({
           TableName: this.tableName,
           Item: this.mapToItem(transcription),
           ConditionExpression: "attribute_not_exists(id)",
-        })
+        }),
+      );
+
+      console.log(
+        `[TranscriptionRepo] Saved successfully: ${transcription.id}`,
       );
     } catch (error) {
       const err = error as { name?: string };
       if (err.name === "ConditionalCheckFailedException") {
         throw new Error(
-          `Transcription with id ${transcription.id} already exists`
+          `Transcription with id ${transcription.id} already exists`,
         );
       }
       console.error("Error saving transcription:", error);
@@ -63,6 +69,8 @@ export class TranscriptionRepository implements ITranscriptionRepository {
 
   async findById(id: string, userId: string): Promise<Transcription | null> {
     try {
+      console.log("[TranscriptionRepo] Finding with PK:", userId, "and SK:", id);
+
       const result = await this.dynamodbClient.send(
         new GetCommand({
           TableName: this.tableName,
@@ -70,13 +78,15 @@ export class TranscriptionRepository implements ITranscriptionRepository {
             userId,
             id,
           },
-        })
+        }),
       );
 
       if (!result.Item) {
+        console.log(`[TranscriptionRepo] Not found: ${id}`);
         return null;
       }
 
+      console.log(`[TranscriptionRepo] Found: ${id}`);
       return this.mapToDomain(result.Item as TranscriptionItem);
     } catch (error) {
       console.error("Error finding transcription by id:", error);
@@ -87,13 +97,17 @@ export class TranscriptionRepository implements ITranscriptionRepository {
   async findByUserId(
     userId: string,
     limit?: number,
-    cursor?: string
+    cursor?: string,
   ): Promise<{
     items: Transcription[];
     hasMore: boolean;
     nextCursor?: string;
   }> {
     try {
+      console.log(
+        `[TranscriptionRepo] Querying by userId=${userId}, limit=${limit}`,
+      );
+
       const pageSize = limit ?? DEFAULT_PAGE_SIZE;
       const exclusiveStartKey = cursor ? this.decodeCursor(cursor) : undefined;
 
@@ -105,17 +119,22 @@ export class TranscriptionRepository implements ITranscriptionRepository {
             ":userId": userId,
           },
           Limit: pageSize,
+          ScanIndexForward: false, // Orden descendente (más recientes primero)
           ...(exclusiveStartKey && { ExclusiveStartKey: exclusiveStartKey }),
-        })
+        }),
       );
 
       const items = (result.Items ?? []).map((item) =>
-        this.mapToDomain(item as TranscriptionItem)
+        this.mapToDomain(item as TranscriptionItem),
       );
       const hasMore = !!result.LastEvaluatedKey;
       const nextCursor = hasMore
         ? this.encodeCursor(result.LastEvaluatedKey as Record<string, unknown>)
         : undefined;
+
+      console.log(
+        `[TranscriptionRepo] Found ${items.length} items, hasMore=${hasMore}`,
+      );
 
       return { items, hasMore, nextCursor };
     } catch (error) {
@@ -124,14 +143,19 @@ export class TranscriptionRepository implements ITranscriptionRepository {
     }
   }
 
-  async delete(id: string, userId: string): Promise<void> {
+  async delete(userId: string, id: string): Promise<void> {
     try {
+      console.log(`[TranscriptionRepo] Deleting: userId=${userId}, id=${id}`);
+
+      // CORREGIDO: Usar ambas claves
       await this.dynamodbClient.send(
         new DeleteCommand({
           TableName: this.tableName,
           Key: { userId, id },
-        })
+        }),
       );
+
+      console.log(`[TranscriptionRepo] Deleted: ${id}`);
     } catch (error) {
       console.error("Error deleting transcription:", error);
       throw error;
@@ -140,6 +164,9 @@ export class TranscriptionRepository implements ITranscriptionRepository {
 
   async update(transcription: Transcription): Promise<void> {
     try {
+      console.log(`[TranscriptionRepo] Updating: ${transcription.id}`);
+
+      // CORREGIDO: Usar ambas claves
       await this.dynamodbClient.send(
         new UpdateCommand({
           TableName: this.tableName,
@@ -159,8 +186,10 @@ export class TranscriptionRepository implements ITranscriptionRepository {
             ":content": transcription.content,
             ":updatedAt": transcription.updatedAt.getTime(),
           },
-        })
+        }),
       );
+
+      console.log(`[TranscriptionRepo] Updated: ${transcription.id}`);
     } catch (error) {
       console.error("Error updating transcription:", error);
       throw error;
@@ -172,7 +201,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       userId: transcription.userId,
       id: transcription.id,
       fileName: transcription.fileName,
-      fileSize: Number(transcription.fileSize), // DynamoDB: Number type, no string
+      fileSize: Number(transcription.fileSize),
       status: transcription.status,
       s3Path: transcription.s3Path,
       content: transcription.content,
@@ -186,12 +215,12 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       item.id,
       item.userId,
       item.fileName,
-      item.fileSize ?? 0, // Backwards compat: items antiguos sin fileSize
+      item.fileSize ?? 0,
       item.status,
       item.s3Path,
       item.content,
       new Date(item.createdAt),
-      new Date(item.updatedAt)
+      new Date(item.updatedAt),
     );
   }
 
@@ -201,7 +230,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
 
   private decodeCursor(cursor: string): Record<string, unknown> {
     return JSON.parse(
-      Buffer.from(cursor, "base64url").toString("utf-8")
+      Buffer.from(cursor, "base64url").toString("utf-8"),
     ) as Record<string, unknown>;
   }
 }

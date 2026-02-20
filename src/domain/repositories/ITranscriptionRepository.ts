@@ -22,8 +22,8 @@ export interface ITranscriptionRepository {
   /**
    * Busca una transcripción por su identificador único y el ID del usuario.
    *
-   * El filtro por userId garantiza aislamiento multi-tenant: un usuario solo
-   * puede acceder a sus propias transcripciones.
+   * Requiere ambas claves de la tabla (userId HASH, id RANGE).
+   * El filtro por userId garantiza aislamiento multi-tenant.
    *
    * @param id - Identificador único de la transcripción.
    * @param userId - Identificador del usuario propietario.

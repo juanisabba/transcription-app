@@ -38,15 +38,9 @@ interface SpeechmaticsWebhookBody {
 
 function extractTranscriptFromResults(
   results: SpeechmaticsTranscriptResult[] | undefined
-): string | undefined {
-  if (!results || !Array.isArray(results)) return undefined;
-  return results
-    .filter(
-      (r) => r.type === "word" && r.alternatives?.[0]?.content
-    )
-    .map((r) => r.alternatives![0].content)
-    .join(" ")
-    .trim();
+): string {
+  if (!results || !Array.isArray(results)) return "";
+  return results.map((r) => r.alternatives?.[0]?.content ?? "").join(" ");
 }
 
 const jsonResponse = (status: number, body: object): APIGatewayProxyResult => ({
@@ -96,17 +90,25 @@ export const handler: APIGatewayProxyHandler = async (
     (async () => {
       try {
         const transcript = extractTranscriptFromResults(parsed?.results);
+        console.log("[WebhookHandler] Texto extraído:", transcript);
         const mapping = await jobMappingRepository.findByJobId(jobId);
         if (!mapping) {
           console.error(`Webhook: no mapping found for jobId=${jobId}`);
           return;
         }
-        await useCase.execute(
-          jobId,
-          mapping.transcriptionId,
-          mapping.userId,
-          transcript
+        const { userId, transcriptionId } = mapping;
+        if (!userId) {
+          console.error(
+            `Webhook: mapping for jobId=${jobId} lacks userId (legacy record?). Keys: transcriptionId=${transcriptionId}`
+          );
+          return;
+        }
+        const transcriptionIdToUse =
+          mapping.transcriptionId ?? (mapping as { id?: string }).id ?? jobId;
+        console.log(
+          `[WebhookHandler] Processing jobId=${jobId} → userId=${userId}, transcriptionId=${transcriptionIdToUse}`
         );
+        await useCase.execute(jobId, transcriptionIdToUse, userId, transcript);
       } catch (err) {
         console.error("WebhookHandler background error:", err);
       }
