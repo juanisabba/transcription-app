@@ -1,0 +1,50 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploying to production...
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: api
+
+      - name: Lint
+        run: pnpm lint
+        working-directory: api
+
+      - name: Run tests
+        run: pnpm test -- --testPathIgnorePatterns=integration
+        working-directory: api
+        env:
+          NODE_ENV: test
+
+      - name: Build
+        run: pnpm build
+        working-directory: api
+
+      - name: Deploy to production
+        run: pnpm exec serverless deploy --stage prod
+        working-directory: api
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-west-1
