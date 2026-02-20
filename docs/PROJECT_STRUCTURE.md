@@ -75,9 +75,10 @@ api/
 │   │   │   │
 │   │   │   ├── transcription/
 │   │   │   │   ├── UploadTranscriptionUseCase.ts
-│   │   │   │   ├── TranscribeRealtimeUseCase.ts
+│   │   │   │   ├── CreateRealtimeSessionUseCase.ts
+│   │   │   │   ├── SaveRealtimeTranscriptionUseCase.ts
 │   │   │   │   ├── ProcessTranscriptionResultUseCase.ts
-│   │   │   │   └── GetTranscriptionStatusUseCase.ts
+│   │   │   │   └── StartTranscriptionUseCase.ts
 │   │   │   │
 │   │   │   └── history/
 │   │   │       ├── ListTranscriptionsUseCase.ts
@@ -148,15 +149,12 @@ api/
 │   │   │   │
 │   │   │   ├── transcription/
 │   │   │   │   ├── UploadHandler.ts
-│   │   │   │   ├── RealtimeHandler.ts
-│   │   │   │   └── GetStatusHandler.ts
+│   │   │   │   ├── RealtimeSessionHandler.ts
+│   │   │   │   ├── SaveRealtimeTranscriptionHandler.ts
+│   │   │   │   ├── ListTranscriptionsHandler.ts
+│   │   │   │   ├── DownloadTranscriptionHandler.ts
+│   │   │   │   └── DeleteHandler.ts
 │   │   │   │
-│   │   │   └── history/
-│   │   │       ├── ListHandler.ts
-│   │   │       ├── GetHandler.ts
-│   │   │       ├── DownloadHandler.ts
-│   │   │       └── DeleteHandler.ts
-│   │   │
 │   │   ├── events/                      # Lambdas de eventos
 │   │   │   ├── S3EventHandler.ts        # Activa al crear archivo en S3
 │   │   │   ├── DynamoDBStreamHandler.ts # Activa al cambiar DynamoDB
