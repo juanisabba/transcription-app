@@ -12,6 +12,7 @@ export class UserRepository implements IUserRepository {
   constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
 
   async findByEmail(email: string): Promise<User | null> {
+    console.log(`[UserRepo] Finding by email: ${email}`);
     try {
       const result = await this.dynamodbClient.send(
         new QueryCommand({
@@ -31,18 +32,19 @@ export class UserRepository implements IUserRepository {
       const item = result.Items[0] as Record<string, unknown>;
       return this.mapToDomain(item);
     } catch (error) {
-      console.error("Error finding user by email:", error);
+      console.error("[UserRepo] Error finding user by email:", error);
       throw error;
     }
   }
 
   async findById(id: string): Promise<User | null> {
+    console.log(`[UserRepo] Finding by ID: ${id}`);
     try {
       const result = await this.dynamodbClient.send(
         new GetCommand({
           TableName: this.tableName,
           Key: {
-            id: id,
+            userId: id,
           },
         })
       );
@@ -53,25 +55,26 @@ export class UserRepository implements IUserRepository {
 
       return this.mapToDomain(result.Item as Record<string, unknown>);
     } catch (error) {
-      console.error("Error finding user by ID:", error);
+      console.error("[UserRepo] Error finding user by ID:", error);
       throw error;
     }
   }
 
   async save(user: User): Promise<void> {
+    console.log(`[UserRepo] Saving user: ${user.id}`);
     try {
       await this.dynamodbClient.send(
         new PutCommand({
           TableName: this.tableName,
           Item: {
-            id: user.id,
+            userId: user.id,
             email: user.email,
             passwordHash: user.passwordHash,
             createdAt: user.createdAt.getTime(),
             updatedAt: new Date().getTime(),
           },
-          // Asegura que no sobreescribimos por ID
-          ConditionExpression: "attribute_not_exists(id)",
+          // Asegura que no sobreescribimos por userId
+          ConditionExpression: "attribute_not_exists(userId)",
         })
       );
 
@@ -81,18 +84,19 @@ export class UserRepository implements IUserRepository {
       if (err.name === "ConditionalCheckFailedException") {
         throw new Error(`User with ID ${user.id} already exists`);
       }
-      console.error("Error saving user:", error);
+      console.error("[UserRepo] Error saving user:", error);
       throw error;
     }
   }
 
   async updateLastLogin(id: string): Promise<void> {
+    console.log(`[UserRepo] Updating last login: ${id}`);
     try {
       await this.dynamodbClient.send(
         new UpdateCommand({
           TableName: this.tableName,
           Key: {
-            id: id,
+            userId: id,
           },
           UpdateExpression: "SET lastLoginAt = :now, updatedAt = :now",
           ExpressionAttributeValues: {
@@ -103,14 +107,14 @@ export class UserRepository implements IUserRepository {
 
       console.log(`Updated last login for user: ${id}`);
     } catch (error) {
-      console.error("Error updating last login:", error);
+      console.error("[UserRepo] Error updating last login:", error);
       throw error;
     }
   }
 
   private mapToDomain(item: Record<string, unknown>): User {
     return new User(
-      item.id as string,
+      (item.userId ?? item.id) as string,
       item.email as string,
       item.passwordHash as string,
       new Date(item.createdAt as number)

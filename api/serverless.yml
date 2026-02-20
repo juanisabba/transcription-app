@@ -173,6 +173,18 @@ functions:
             providerARNs:
               - !GetAtt CognitoUserPool.Arn
 
+  confirmUpload:
+    handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
+    events:
+      - http:
+          path: transcriptions/{id}/confirm
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
   # ===== S3 EVENT TRIGGERS =====
 
   processAudioUpload:
@@ -266,6 +278,21 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: vocali-transcriptions-${self:provider.stage}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - HEAD
+              AllowedOrigins:
+                - 'http://localhost:3000'
+                # Añadir aquí el origen de producción cuando lo tengas
+                # - 'https://tu-dominio.com'
+              ExposedHeaders:
+                - ETag
         PublicAccessBlockConfiguration:
           BlockPublicAcls: true
           BlockPublicPolicy: true
@@ -324,7 +351,7 @@ custom:
       noStart: true
 
   serverless-offline:
-    httpPort: 8080
+    httpPort: 3001
     host: "0.0.0.0"
     noPrependStageInUrl: true
     # Para desarrollo local sin Cognito: serverless offline --noAuth
