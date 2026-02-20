@@ -27,6 +27,32 @@ export const useTranscription = () => {
     }
   };
 
+  const uploadWithConfirmation = async (file: File) => {
+    const api = useApi();
+    try {
+      uiStore.setLoading(true);
+      const response = await transcriptionService.uploadWithConfirmation(api, file);
+      transcriptionStore.addTranscription({
+        id: response.id,
+        fileName: file.name,
+        status: response.status,
+        createdAt: new Date().toISOString(),
+      });
+      uiStore.setSuccess('Archivo subido exitosamente');
+      return response;
+    } catch (error: any) {
+      const message =
+        (error as { response?: { data?: { message?: string } }; message?: string })
+          ?.response?.data?.message ||
+        (error as Error)?.message ||
+        'Error al subir archivo';
+      uiStore.setError(message);
+      throw error;
+    } finally {
+      uiStore.setLoading(false);
+    }
+  };
+
   const list = async (page: number = 1, pageSize: number = 10) => {
     const api = useApi();
     try {
@@ -64,5 +90,5 @@ export const useTranscription = () => {
     }
   };
 
-  return { upload, list, download, remove };
+  return { upload, uploadWithConfirmation, list, download, remove };
 };

@@ -1,6 +1,6 @@
 import type { AxiosInstance } from 'axios';
+import api from '../services/api';
 
 export const useApi = (): AxiosInstance => {
-  const { $api } = useNuxtApp();
-  return $api as AxiosInstance;
+  return api;
 };

@@ -8,7 +8,11 @@ export default defineNuxtConfig({
 
   devServer: {
     port: 3000,
-    strictPort: true,
+  },
+  vite: {
+    server: {
+      strictPort: true,
+    },
   },
 
   ssr: false, // Client-Side Rendering

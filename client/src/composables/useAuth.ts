@@ -1,8 +1,5 @@
+import type { LoginRequest, RegisterRequest } from "~/src/types/auth.types";
 import { authService } from "../services/auth.service";
-import type { LoginRequest, RegisterRequest } from "../types/auth.types";
-import { useApi } from "./useApi";
-import { useAuthStore } from "../stores/auth.store";
-import { useUiStore } from "../stores/ui.store";
 
 export const useAuth = () => {
   const authStore = useAuthStore();
@@ -10,19 +7,17 @@ export const useAuth = () => {
   const router = useRouter();
 
   const login = async (credentials: LoginRequest) => {
-    const api = useApi();
     try {
       uiStore.setLoading(true);
       uiStore.clearMessages();
 
       console.log("Iniciando login con:", credentials.email);
-      const response = await authService.login(api, credentials);
+      const response = await authService.login(credentials);
 
       console.log("Login exitoso:", response);
       authStore.setAuth(response);
       uiStore.setSuccess("Inicio de sesión exitoso");
 
-      // Esperar un poco para que se vea el mensaje
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await router.push("/transcribe/upload");
     } catch (error: any) {
@@ -36,19 +31,17 @@ export const useAuth = () => {
   };
 
   const register = async (credentials: RegisterRequest) => {
-    const api = useApi();
     try {
       uiStore.setLoading(true);
       uiStore.clearMessages();
 
       console.log("Iniciando registro con:", credentials.email);
-      const response = await authService.register(api, credentials);
+      const response = await authService.register(credentials);
 
       console.log("Registro exitoso:", response);
       authStore.setAuth(response);
       uiStore.setSuccess("Registro exitoso");
 
-      // Esperar un poco para que se vea el mensaje
       await new Promise((resolve) => setTimeout(resolve, 1000));
       await router.push("/transcribe/upload");
     } catch (error: any) {
@@ -61,10 +54,9 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    const api = useApi();
     try {
       uiStore.setLoading(true);
-      await authService.logout(api);
+      await authService.logout();
       authStore.logout();
       uiStore.setSuccess("Sesión cerrada");
       await router.push("/");
