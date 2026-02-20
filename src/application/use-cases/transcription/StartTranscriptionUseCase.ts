@@ -36,6 +36,8 @@ export class StartTranscriptionUseCase {
     s3Key: string,
     language: string = "en"
   ): Promise<void> {
+    console.log(`[StartTranscription] Iniciando proceso para ${transcriptionId}`);
+
     const transcription = await this.transcriptionRepository.findById(
       transcriptionId,
       userId
@@ -52,9 +54,12 @@ export class StartTranscriptionUseCase {
       PRESIGNED_GET_EXPIRES_IN
     );
 
+    console.log("[Upload] Iniciando envío a Speechmatics para ID:", transcriptionId);
     const { jobId } = await this.externalApiService.submitJob(audioUrl, language);
 
+    console.log("[StartTranscriptionUseCase] Llamando a jobMappingRepository.save:", { jobId, transcriptionId, userId });
     await this.jobMappingRepository.save(jobId, transcriptionId, userId);
+    console.log("[StartTranscriptionUseCase] jobMappingRepository.save completado");
 
     transcription.updateStatus("processing");
     await this.transcriptionRepository.update(transcription);

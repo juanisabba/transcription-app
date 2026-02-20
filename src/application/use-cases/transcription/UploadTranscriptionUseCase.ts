@@ -89,6 +89,7 @@ export class UploadTranscriptionUseCase {
 
     // Paso 4: Guardar en BD
     await this.transcriptionRepository.save(transcription);
+    console.log("[Upload] Transcription guardada en DynamoDB, ID:", transcriptionId, "- El cliente debe subir a S3; el evento S3 iniciará el envío a Speechmatics.");
 
     // Paso 5: Generar presigned URL
     const uploadUrl = await this.storageService.generatePresignedUrl(

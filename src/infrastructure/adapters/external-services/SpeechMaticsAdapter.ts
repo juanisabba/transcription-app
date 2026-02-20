@@ -88,32 +88,42 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       fetch_data: { url: s3Url },
     };
 
-    if (this.webhookUrl?.trim()) {
-      config.notification_config = [
-        {
-          url: this.webhookUrl.trim(),
-          contents: ["transcript"],
-          method: "post",
-        },
-      ];
-    }
+    const webhookUrl =
+      "https://monologic-tayna-enumerably.ngrok-free.dev/webhook/speechmatics";
+    config.notification_config = [
+      {
+        url: webhookUrl,
+        contents: ["transcript"],
+        method: "post",
+      },
+    ];
+
+    console.log("[SpeechMaticsAdapter] Config enviada a Speechmatics:", JSON.stringify(config, null, 2));
 
     const formData = new FormData();
     formData.append("config", JSON.stringify(config));
 
-    const { status, data } = await this.request<SpeechmaticsJobResponse>(
-      "POST",
-      "/jobs",
-      formData
-    );
-
-    if (status !== 201 || !(data as SpeechmaticsJobResponse).id) {
-      throw new Error(
-        `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`
+    try {
+      const { status, data } = await this.request<SpeechmaticsJobResponse>(
+        "POST",
+        "/jobs",
+        formData
       );
-    }
 
-    return { jobId: (data as SpeechmaticsJobResponse).id };
+      console.log("[Speechmatics] Respuesta de la API:", { status, data, jobId: (data as SpeechmaticsJobResponse).id });
+
+      if (status !== 201 || !(data as SpeechmaticsJobResponse).id) {
+        throw new Error(
+          `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`
+        );
+      }
+
+      return { jobId: (data as SpeechmaticsJobResponse).id };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("[Speechmatics] ERROR:", msg, error);
+      throw error;
+    }
   }
 
   async getJobStatus(jobId: string): Promise<JobStatus> {

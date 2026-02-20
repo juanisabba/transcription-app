@@ -47,6 +47,8 @@ export const handler: S3Handler = async (event: S3Event): Promise<void> => {
 
     const { userId, transcriptionId } = parsed;
 
+    console.log("[S3UploadHandler] Iniciando envío a Speechmatics para ID:", transcriptionId);
+
     try {
       await useCase.execute(userId, transcriptionId, key);
       console.log(
