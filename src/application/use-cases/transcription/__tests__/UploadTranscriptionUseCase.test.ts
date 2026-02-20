@@ -105,5 +105,28 @@ describe("UploadTranscriptionUseCase", () => {
       );
       expect(mockTranscriptionRepo.save).not.toHaveBeenCalled();
     });
+
+    it("should throw InvalidFileTypeException if contentType is not audio/*", async () => {
+      const request: UploadTranscriptionDTO = {
+        fileName: "video.mp4",
+        fileSize: 1024,
+        contentType: "video/mp4",
+      };
+      await expect(useCase.execute(userId, request)).rejects.toThrow(
+        /Invalid file type/
+      );
+      expect(mockTranscriptionRepo.save).not.toHaveBeenCalled();
+    });
+
+    it("should accept valid audio/* content types", async () => {
+      const request: UploadTranscriptionDTO = {
+        fileName: "audio.ogg",
+        fileSize: 1024,
+        contentType: "audio/ogg",
+      };
+      const result = await useCase.execute(userId, request);
+      expect(result.transcriptionId).toBeDefined();
+      expect(mockTranscriptionRepo.save).toHaveBeenCalled();
+    });
   });
 });

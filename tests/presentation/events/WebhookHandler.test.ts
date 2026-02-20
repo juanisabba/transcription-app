@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 
 const mockFindByJobId = jest.fn();
@@ -27,9 +28,17 @@ jest.mock("../../../src/application/use-cases/transcription/ProcessTranscription
 import { handler } from "../../../src/presentation/events/WebhookHandler";
 
 describe("WebhookHandler", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockExecute.mockResolvedValue(undefined);
+    process.env = { ...originalEnv };
+    delete process.env.SPEECHMATICS_WEBHOOK_SECRET;
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   const createEvent = (
@@ -82,6 +91,49 @@ describe("WebhookHandler", () => {
     expect(result).toBeDefined();
     expect(result!.statusCode).toBe(200);
     expect(mockExecute).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when SPEECHMATICS_WEBHOOK_SECRET is set and signature is missing", async () => {
+    process.env.SPEECHMATICS_WEBHOOK_SECRET = "my-secret";
+    const event = createEvent(
+      {},
+      JSON.stringify({ job: { id: "job-123" }, results: [] })
+    );
+    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
+    const result = await handler(event, ctx, () => {});
+
+    expect(result).toBeDefined();
+    expect(result!.statusCode).toBe(401);
+    expect(mockExecute).not.toHaveBeenCalled();
+  });
+
+  it("returns 401 when signature is invalid", async () => {
+    process.env.SPEECHMATICS_WEBHOOK_SECRET = "my-secret";
+    const body = JSON.stringify({ job: { id: "job-123" }, results: [] });
+    const event = createEvent({}, body);
+    (event.headers as Record<string, string>)["X-Webhook-Signature"] = "invalid-signature";
+    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
+    const result = await handler(event, ctx, () => {});
+
+    expect(result).toBeDefined();
+    expect(result!.statusCode).toBe(401);
+    expect(mockExecute).not.toHaveBeenCalled();
+  });
+
+  it("returns 200 when signature is valid", async () => {
+    process.env.SPEECHMATICS_WEBHOOK_SECRET = "my-secret";
+    mockFindByJobId.mockResolvedValue(null);
+    const body = JSON.stringify({ job: { id: "job-123" }, results: [] });
+    const signature = createHmac("sha256", "my-secret")
+      .update(body, "utf8")
+      .digest("hex");
+    const event = createEvent({}, body);
+    (event.headers as Record<string, string>)["X-Webhook-Signature"] = signature;
+    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
+    const result = await handler(event, ctx, () => {});
+
+    expect(result).toBeDefined();
+    expect(result!.statusCode).toBe(200);
   });
 
   it("returns 200 when job mapping exists, processes async", async () => {
