@@ -45,60 +45,47 @@ export class RegisterUserUC {
    */
   public async execute(request: RegisterUserDTO): Promise<AuthResponseDTO> {
     const { email, password } = request;
-    console.log("[UC] RegisterUserUC.execute started", { email });
 
     // Paso 1: Validar request
     if (!email || !password) {
-      throw new ValidationError("Email and password are required");
+      throw new ValidationError("El email y la contraseña son requeridos");
     }
-    console.log("[UC] Step 1 passed: validation OK");
 
     // Paso 2: Validar fortaleza de la contraseña
     const isStrongPassword: boolean =
       this.passwordService.isStrongPassword(password);
     if (!isStrongPassword) {
       throw new InvalidPasswordException(
-        "Password does not meet security requirements",
+        "La contraseña no cumple los requisitos de seguridad",
       );
     }
-    console.log("[UC] Step 2 passed: password strength OK");
 
     // Paso 3: Verificar si el usuario ya existe
-    console.log("[UC] Step 3: calling userRepository.findByEmail");
     const existingUser = await this.userRepository.findByEmail(email);
-    console.log("[UC] Step 3 done: existingUser=", existingUser !== null);
     if (existingUser) {
       throw new UserAlreadyExistsException(email);
     }
 
     // Paso 4: Hashear la contraseña
     const passwordHash: string = this.passwordService.hash(password);
-    console.log("[UC] Step 4 passed: password hashed");
 
     // Paso 5: Crear entidad de usuario de dominio con ID generado
     // (en mock mode, authService.register no hace nada real, así que generamos el ID aquí)
     const userId = uuid();
     const now: Date = new Date();
     const user = new User(userId, email, passwordHash, now);
-    console.log("[UC] Step 5 passed: User entity created", { userId });
 
     // Paso 6: Guardar en base de datos
-    console.log("[UC] Step 6: calling userRepository.save");
     await this.userRepository.save(user);
-    console.log("[UC] Step 6 done: user saved");
 
     // Paso 7: Registrar en servicio de autenticación externo (mock por ahora)
-    console.log("[UC] Step 7: calling authService.register");
     await this.authService.register(email, password);
-    console.log("[UC] Step 7 done: authService.register completed");
 
     // Paso 8: Autenticar para obtener tokens
-    console.log("[UC] Step 8: calling authService.authenticateWithPassword");
     const tokens = await this.authService.authenticateWithPassword(
       email,
       password,
     );
-    console.log("[UC] Step 8 done: tokens received", { expiresIn: tokens.expiresIn });
 
     // Paso 9: Construir y retornar DTO de respuesta
     const response: AuthResponseDTO = {

@@ -25,7 +25,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
     if (!token) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Missing Authorization header" }),
+        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Falta el header de autorización" }),
         headers: corsHeaders,
       };
     }
@@ -37,7 +37,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "Logout successful" }),
+      body: JSON.stringify({ message: "Cierre de sesión exitoso" }),
       headers: corsHeaders,
     };
   } catch (error) {
@@ -61,7 +61,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     return {
       statusCode: 500,
-      body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Internal Server Error" }),
+      body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" }),
       headers: corsHeaders,
     };
   }

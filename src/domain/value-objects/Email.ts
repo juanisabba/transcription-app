@@ -17,7 +17,7 @@ export class Email {
    */
   constructor(email: string) {
     if (!Email.isValid(email)) {
-      throw new Error(`Invalid email format: ${email}`);
+      throw new Error(`Formato de email inválido: ${email}`);
     }
 
     this.value = email;
@@ -34,4 +34,3 @@ export class Email {
     return EMAIL_REGEX.test(email);
   }
 }
-

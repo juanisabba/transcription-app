@@ -8,11 +8,9 @@ import type {
 export const authService = {
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
     try {
-      console.log("API call: POST /auth/login");
       const { data } = await api.post<AuthResponse>("/auth/login", credentials);
-      console.log("Response:", data);
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Auth service login error:", error);
       throw error;
     }
@@ -20,14 +18,12 @@ export const authService = {
 
   register: async (credentials: RegisterRequest): Promise<AuthResponse> => {
     try {
-      console.log("API call: POST /auth/register");
       const { data } = await api.post<AuthResponse>(
         "/auth/register",
         credentials,
       );
-      console.log("Response:", data);
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Auth service register error:", error);
       throw error;
     }
@@ -35,10 +31,8 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     try {
-      console.log("API call: POST /auth/logout");
       await api.post("/auth/logout");
-      console.log("Logout successful");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Auth service logout error:", error);
       throw error;
     }

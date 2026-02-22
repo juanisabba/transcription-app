@@ -19,6 +19,6 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   // Si está autenticado, no puede ir a login/register
   if (authStore.isAuthenticated && to.path.startsWith("/auth")) {
-    return navigateTo("/transcribe/upload");
+    return navigateTo("/");
   }
 });

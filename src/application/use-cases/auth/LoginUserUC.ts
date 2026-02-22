@@ -43,7 +43,7 @@ export class LoginUserUC {
 
     // Paso 1: Validar request
     if (!email || !password) {
-      throw new ValidationError('Email and password are required');
+      throw new ValidationError("El email y la contraseña son requeridos");
     }
 
     // Paso 2: Autenticar con el servicio externo (p. ej. Cognito o mock)

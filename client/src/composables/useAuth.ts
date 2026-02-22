@@ -1,5 +1,6 @@
 import type { LoginRequest, RegisterRequest } from "~/src/types/auth.types";
 import { authService } from "../services/auth.service";
+import { getApiErrorMessage } from "../utils/errorUtils";
 
 export const useAuth = () => {
   const authStore = useAuthStore();
@@ -11,20 +12,15 @@ export const useAuth = () => {
       uiStore.setLoading(true);
       uiStore.clearMessages();
 
-      console.log("Iniciando login con:", credentials.email);
       const response = await authService.login(credentials);
-
-      console.log("Login exitoso:", response);
       authStore.setAuth(response);
       uiStore.setSuccess("Inicio de sesión exitoso");
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await router.push("/transcribe/upload");
-    } catch (error: any) {
+      await router.push("/");
+    } catch (error: unknown) {
       console.error("Error en login:", error);
-      const message =
-        error.response?.data?.message || "Error al iniciar sesión";
-      uiStore.setError(message);
+      uiStore.setError(getApiErrorMessage(error, "Error al iniciar sesión"));
     } finally {
       uiStore.setLoading(false);
     }
@@ -35,19 +31,17 @@ export const useAuth = () => {
       uiStore.setLoading(true);
       uiStore.clearMessages();
 
-      console.log("Iniciando registro con:", credentials.email);
       const response = await authService.register(credentials);
-
-      console.log("Registro exitoso:", response);
       authStore.setAuth(response);
       uiStore.setSuccess("Registro exitoso");
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await router.push("/transcribe/upload");
-    } catch (error: any) {
+      await router.push("/");
+    } catch (error: unknown) {
       console.error("Error en registro:", error);
-      const message = error.response?.data?.message || "Error al registrarse";
-      uiStore.setError(message);
+      uiStore.setError(
+        getApiErrorMessage(error, "Error al registrarse"),
+      );
     } finally {
       uiStore.setLoading(false);
     }
@@ -60,7 +54,7 @@ export const useAuth = () => {
       authStore.logout();
       uiStore.setSuccess("Sesión cerrada");
       await router.push("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error en logout:", error);
       uiStore.setError("Error al cerrar sesión");
       authStore.logout();

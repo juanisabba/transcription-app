@@ -1,7 +1,10 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  <div class="min-h-[calc(100vh-4.5rem)] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-      <h1 class="text-3xl font-bold text-gray-900 mb-2 text-center">Vocali</h1>
+      <h1 class="text-3xl font-bold mb-2 text-center">
+        <span class="text-black">Invox</span>
+        <span class="text-gray-600"> Medical</span>
+      </h1>
       <p class="text-gray-500 text-center mb-8">Transcribe your audio easily</p>
 
       <!-- Error Alert -->
@@ -81,7 +84,7 @@ const router = useRouter();
 
 onMounted(() => {
   if (authStore.isAuthenticated) {
-    router.push('/transcribe/upload');
+    router.push('/');
   }
 });
 
