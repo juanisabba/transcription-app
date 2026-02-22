@@ -95,7 +95,7 @@ describe("RegisterUserUC", () => {
       };
 
       await expect(useCase.execute(request)).rejects.toThrow(
-        "User with email user@example.com already exists",
+        "Ya existe un usuario con el email user@example.com",
       );
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
@@ -107,7 +107,7 @@ describe("RegisterUserUC", () => {
       };
 
       await expect(useCase.execute(request)).rejects.toThrow(
-        "Email and password are required",
+        "El email y la contraseña son requeridos",
       );
       expect(mockUserRepository.save).not.toHaveBeenCalled();
     });
@@ -119,7 +119,7 @@ describe("RegisterUserUC", () => {
       };
 
       await expect(useCase.execute(request)).rejects.toThrow(
-        "Email and password are required",
+        "El email y la contraseña son requeridos",
       );
     });
 
@@ -132,7 +132,7 @@ describe("RegisterUserUC", () => {
       };
 
       await expect(useCase.execute(request)).rejects.toThrow(
-        "Password does not meet security requirements",
+        "La contraseña no cumple los requisitos de seguridad",
       );
       expect(mockUserRepository.findByEmail).not.toHaveBeenCalled();
     });

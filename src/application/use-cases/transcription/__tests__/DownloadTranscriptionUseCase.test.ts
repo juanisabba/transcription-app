@@ -65,7 +65,7 @@ describe("DownloadTranscriptionUseCase", () => {
 
       await expect(
         useCase.execute(userId, transcriptionId)
-      ).rejects.toThrow("not ready for download");
+      ).rejects.toThrow("no está lista para descargar");
     });
 
     it("should throw if transcription is still processing", async () => {
@@ -84,7 +84,7 @@ describe("DownloadTranscriptionUseCase", () => {
 
       await expect(
         useCase.execute(userId, transcriptionId)
-      ).rejects.toThrow("not ready for download");
+      ).rejects.toThrow("no está lista para descargar");
     });
   });
 });

@@ -84,6 +84,13 @@ describe("StartTranscriptionUseCase", () => {
         "es"
       );
     });
+
+    it("should set duration when provided", async () => {
+      await useCase.execute(userId, transcriptionId, s3Key, "en", 120);
+
+      const updated = mockTranscriptionRepo.update.mock.calls[0][0];
+      expect(updated.duration).toBe(120);
+    });
   });
 
   describe("error cases", () => {
@@ -92,7 +99,7 @@ describe("StartTranscriptionUseCase", () => {
 
       await expect(
         useCase.execute(userId, "non-existent-id", s3Key)
-      ).rejects.toThrow("not found");
+      ).rejects.toThrow("no encontrada");
     });
 
     it("should propagate errors from the external API service", async () => {

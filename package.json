@@ -9,11 +9,14 @@
     "dev:client": "pnpm --filter client run dev",
     "dev": "concurrently \"pnpm:dev:api\" \"pnpm:dev:client\"",
     "build": "pnpm --filter api run build && pnpm --filter client run build",
-    "test": "pnpm --filter api run test",
+    "test": "pnpm --filter api run test && pnpm --filter client run test",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
     "lint": "pnpm --filter api run lint && pnpm --filter client run lint",
     "type-check": "pnpm --filter api run type-check && pnpm --filter client run type-check"
   },
   "devDependencies": {
+    "cypress": "^13.17.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.400.0",
     "@aws-sdk/client-dynamodb": "^3.400.0",
     "@aws-sdk/lib-dynamodb": "^3.400.0",

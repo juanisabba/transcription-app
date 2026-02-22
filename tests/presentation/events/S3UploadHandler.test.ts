@@ -1,4 +1,4 @@
-import type { S3Event, S3Handler } from "aws-lambda";
+import type { Context, S3Event, S3Handler } from "aws-lambda";
 
 const mockExecute = jest.fn();
 
@@ -58,13 +58,13 @@ describe("S3UploadHandler", () => {
 
   it("calls StartTranscriptionUseCase when key has valid format", async () => {
     const event = createS3Event("uploads/user-123/trans-456/audio.mp3");
-    await (handler as S3Handler)(event, {} as any, () => {});
+    await (handler as S3Handler)(event, {} as Context, () => {});
 
     expect(mockExecute).toHaveBeenCalledWith("user-123", "trans-456", "uploads/user-123/trans-456/audio.mp3");
   });
 
   it("does not throw when key has invalid format", async () => {
     const event = createS3Event("invalid/key/format");
-    await expect((handler as S3Handler)(event, {} as any, () => {})).resolves.not.toThrow();
+    await expect((handler as S3Handler)(event, {} as Context, () => {})).resolves.not.toThrow();
   });
 });

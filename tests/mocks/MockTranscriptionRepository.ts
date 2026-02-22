@@ -8,5 +8,6 @@ export const createMockTranscriptionRepository =
       findByUserId: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      getStatsByUserId: jest.fn(),
     };
   };

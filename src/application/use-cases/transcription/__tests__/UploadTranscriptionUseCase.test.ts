@@ -80,7 +80,7 @@ describe("UploadTranscriptionUseCase", () => {
         fileSize: 1024,
       };
       await expect(useCase.execute(userId, request)).rejects.toThrow(
-        "fileName is required"
+        "fileName es requerido"
       );
       expect(mockTranscriptionRepo.save).not.toHaveBeenCalled();
     });
@@ -101,7 +101,7 @@ describe("UploadTranscriptionUseCase", () => {
         fileSize: 21 * 1024 * 1024, // 21 MB
       };
       await expect(useCase.execute(userId, request)).rejects.toThrow(
-        "fileSize exceeds 20 MB limit"
+        /fileSize excede el límite de 20 MB/
       );
       expect(mockTranscriptionRepo.save).not.toHaveBeenCalled();
     });
@@ -113,7 +113,7 @@ describe("UploadTranscriptionUseCase", () => {
         contentType: "video/mp4",
       };
       await expect(useCase.execute(userId, request)).rejects.toThrow(
-        /Invalid file type/
+        /Tipo de archivo no válido/
       );
       expect(mockTranscriptionRepo.save).not.toHaveBeenCalled();
     });
@@ -127,6 +127,17 @@ describe("UploadTranscriptionUseCase", () => {
       const result = await useCase.execute(userId, request);
       expect(result.transcriptionId).toBeDefined();
       expect(mockTranscriptionRepo.save).toHaveBeenCalled();
+    });
+
+    it("should throw InvalidFileTypeException when contentType is not a string", async () => {
+      const request = {
+        fileName: "audio.mp3",
+        fileSize: 1024,
+        contentType: 123 as unknown as string,
+      };
+      await expect(useCase.execute(userId, request)).rejects.toThrow(
+        /Tipo de archivo no válido/
+      );
     });
   });
 });

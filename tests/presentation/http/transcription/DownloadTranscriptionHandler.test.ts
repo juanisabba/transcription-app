@@ -3,33 +3,18 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 const mockValidateToken = jest.fn();
 const mockExecute = jest.fn();
 
-jest.mock(
-  "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance",
-  () => ({
-    transcriptionRepository: {
-      save: jest.fn(),
-      findById: jest.fn(),
-      findByUserId: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-  })
-);
+jest.mock("../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance", () => ({
+  transcriptionRepository: {
+    save: jest.fn(),
+    findById: jest.fn(),
+    findByUserId: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
 
-jest.mock(
-  "../../../../api/src/infrastructure/adapters/storage/storageServiceInstance",
-  () => ({
-    storageService: {
-      generatePresignedUrl: jest.fn(),
-      generateDownloadPresignedUrl: jest.fn(),
-      deleteFile: jest.fn(),
-      getFile: jest.fn(),
-    },
-  })
-);
-
-jest.mock("../../../../src/application/use-cases/transcription/DeleteTranscriptionUseCase", () => ({
-  DeleteTranscriptionUseCase: jest.fn().mockImplementation(() => ({
+jest.mock("../../../../src/application/use-cases/transcription/DownloadTranscriptionUseCase", () => ({
+  DownloadTranscriptionUseCase: jest.fn().mockImplementation(() => ({
     execute: mockExecute,
   })),
 }));
@@ -40,13 +25,16 @@ jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/DeleteHandler";
+import { handler } from "../../../../src/presentation/http/transcription/DownloadTranscriptionHandler";
 
-describe("DeleteHandler", () => {
+describe("DownloadTranscriptionHandler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockValidateToken.mockResolvedValue({ sub: "user-123" });
-    mockExecute.mockResolvedValue(undefined);
+    mockExecute.mockResolvedValue({
+      content: "Transcripción de ejemplo",
+      fileName: "audio.mp3",
+    });
   });
 
   const createEvent = (
@@ -57,9 +45,9 @@ describe("DeleteHandler", () => {
       body: null,
       headers: { Authorization: "Bearer token", ...headers },
       multiValueHeaders: {},
-      httpMethod: "DELETE",
+      httpMethod: "GET",
       isBase64Encoded: false,
-      path: "/transcriptions/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      path: "/transcriptions/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/download",
       pathParameters: pathParams,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,
@@ -68,14 +56,18 @@ describe("DeleteHandler", () => {
       resource: "",
     }) as APIGatewayProxyEvent;
 
-  it("returns 204 on successful delete", async () => {
+  it("returns 200 with content and download headers on success", async () => {
     const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" });
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
     expect(result).toBeDefined();
-    expect(result!.statusCode).toBe(204);
-    expect(result!.body).toBe("");
+    expect(result!.statusCode).toBe(200);
+    expect(result!.body).toBe("Transcripción de ejemplo");
+    expect(result!.headers).toMatchObject({
+      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="audio.mp3.txt"',
+    });
     expect(mockExecute).toHaveBeenCalledWith("user-123", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d");
   });
 
@@ -98,17 +90,6 @@ describe("DeleteHandler", () => {
     expect(result!.statusCode).toBe(400);
   });
 
-  it("returns 400 when transcription id has invalid UUID format", async () => {
-    const event = createEvent({ id: "invalid-id" });
-    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
-    const result = await handler(event, ctx, () => {});
-
-    expect(result).toBeDefined();
-    expect(result!.statusCode).toBe(400);
-    const parsed = JSON.parse(result!.body ?? "{}");
-    expect(parsed.message).toContain("formato inválido");
-  });
-
   it("returns 404 when transcription not found", async () => {
     const { NotFoundError } = await import("../../../../src/shared/errors");
     mockExecute.mockRejectedValue(new NotFoundError("Transcripción", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"));
@@ -118,5 +99,25 @@ describe("DeleteHandler", () => {
 
     expect(result).toBeDefined();
     expect(result!.statusCode).toBe(404);
+  });
+
+  it("returns 422 when transcription not ready for download", async () => {
+    mockExecute.mockRejectedValue(new Error("La transcripción no está lista para descargar"));
+    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" });
+    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
+    const result = await handler(event, ctx, () => {});
+
+    expect(result).toBeDefined();
+    expect(result!.statusCode).toBe(422);
+  });
+
+  it("returns 401 when token is invalid", async () => {
+    mockValidateToken.mockRejectedValue(new Error("Token expired"));
+    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" });
+    const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
+    const result = await handler(event, ctx, () => {});
+
+    expect(result).toBeDefined();
+    expect(result!.statusCode).toBe(401);
   });
 });

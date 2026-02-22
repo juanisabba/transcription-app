@@ -7,7 +7,10 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",
@@ -17,5 +20,13 @@
     "nuxt": "^4.3.1",
     "vue": "^3.5.28",
     "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^3.23.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "pinia": "^3.0.4",
+    "unplugin-auto-import": "^21.0.0",
+    "vitest": "^2.1.9",
+    "vue-tsc": "^2.2.12"
   }
 }

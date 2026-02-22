@@ -4,3 +4,4 @@ export { createMockTranscriptionRepository } from "./MockTranscriptionRepository
 export { createMockStorageService } from "./MockStorageService";
 export { createMockExternalApiService } from "./MockExternalApiService";
 export { createMockJobMappingRepository } from "./MockJobMappingRepository";
+export { createMockRealtimeTokenProvider } from "./MockRealtimeTokenProvider";

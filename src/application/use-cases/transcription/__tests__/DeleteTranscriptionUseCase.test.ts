@@ -1,11 +1,10 @@
-import { createHmac } from "node:crypto";
 import { DeleteTranscriptionUseCase } from "../DeleteTranscriptionUseCase";
 import {
   createMockTranscriptionRepository,
   createMockStorageService,
 } from "../../../../../tests/mocks";
 import { Transcription } from "../../../../domain/entities/Transcription";
-import { NotFoundError } from "../../../../shared/errors";
+import { ForbiddenError, NotFoundError } from "../../../../shared/errors";
 
 const makeTranscription = (
   id: string,
@@ -49,7 +48,7 @@ describe("DeleteTranscriptionUseCase", () => {
     mockTranscriptionRepo.delete.mockResolvedValue(undefined);
     mockStorageService.deleteFile.mockResolvedValue(undefined);
 
-    await useCase.execute("trans-1", userId);
+    await useCase.execute(userId, "trans-1");
 
     expect(mockTranscriptionRepo.findById).toHaveBeenCalledWith("trans-1", userId);
     expect(mockStorageService.deleteFile).toHaveBeenCalledWith(
@@ -63,7 +62,7 @@ describe("DeleteTranscriptionUseCase", () => {
     mockTranscriptionRepo.findById.mockResolvedValue(transcription);
     mockTranscriptionRepo.delete.mockResolvedValue(undefined);
 
-    await useCase.execute("trans-2", userId);
+    await useCase.execute(userId, "trans-2");
 
     expect(mockStorageService.deleteFile).not.toHaveBeenCalled();
     expect(mockTranscriptionRepo.delete).toHaveBeenCalledWith("trans-2", userId);
@@ -72,8 +71,24 @@ describe("DeleteTranscriptionUseCase", () => {
   it("should throw NotFoundError when transcription does not exist", async () => {
     mockTranscriptionRepo.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute("non-existent", userId)).rejects.toThrow(
+    await expect(useCase.execute(userId, "non-existent")).rejects.toThrow(
       NotFoundError
+    );
+
+    expect(mockStorageService.deleteFile).not.toHaveBeenCalled();
+    expect(mockTranscriptionRepo.delete).not.toHaveBeenCalled();
+  });
+
+  it("should throw ForbiddenError when transcription belongs to another user", async () => {
+    const otherUserTranscription = makeTranscription(
+      "trans-1",
+      "other-user-456",
+      "uploads/other-user-456/trans-1/audio.mp3"
+    );
+    mockTranscriptionRepo.findById.mockResolvedValue(otherUserTranscription);
+
+    await expect(useCase.execute(userId, "trans-1")).rejects.toThrow(
+      ForbiddenError
     );
 
     expect(mockStorageService.deleteFile).not.toHaveBeenCalled();
@@ -90,8 +105,37 @@ describe("DeleteTranscriptionUseCase", () => {
     mockStorageService.deleteFile.mockRejectedValue(new Error("S3 error"));
     mockTranscriptionRepo.delete.mockResolvedValue(undefined);
 
-    await useCase.execute("trans-3", userId);
+    await useCase.execute(userId, "trans-3");
 
     expect(mockTranscriptionRepo.delete).toHaveBeenCalledWith("trans-3", userId);
+  });
+
+  it("should throw UnauthorizedError when userId is empty", async () => {
+    await expect(useCase.execute("", "trans-1")).rejects.toThrow(
+      "userId es requerido"
+    );
+    expect(mockTranscriptionRepo.findById).not.toHaveBeenCalled();
+  });
+
+  it("should throw ValidationError when transcriptionId is empty", async () => {
+    await expect(useCase.execute(userId, "")).rejects.toThrow(
+      "transcriptionId es requerido"
+    );
+    expect(mockTranscriptionRepo.findById).not.toHaveBeenCalled();
+  });
+
+  it("should throw when DynamoDB delete fails", async () => {
+    const transcription = makeTranscription(
+      "trans-4",
+      userId,
+      "uploads/user-123/trans-4/file.mp3"
+    );
+    mockTranscriptionRepo.findById.mockResolvedValue(transcription);
+    mockStorageService.deleteFile.mockResolvedValue(undefined);
+    mockTranscriptionRepo.delete.mockRejectedValue(new Error("DynamoDB error"));
+
+    await expect(useCase.execute(userId, "trans-4")).rejects.toThrow(
+      "DynamoDB error"
+    );
   });
 });

@@ -2,6 +2,7 @@ import type { IStorageService } from "../../src/application/ports/IStorageServic
 
 export const createMockStorageService = (): jest.Mocked<IStorageService> => {
   return {
+    uploadFile: jest.fn(),
     generatePresignedUrl: jest.fn(),
     generateDownloadPresignedUrl: jest.fn(),
     deleteFile: jest.fn(),

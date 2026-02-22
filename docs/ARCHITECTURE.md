@@ -606,7 +606,7 @@ Antes de hacer commit:
 - [ ] ¿Los errores extienden AppError?
 - [ ] ¿Las lambdas son delgadas (<20 líneas)?
 - [ ] ¿El código está bien documentado?
-- [ ] ¿Coverage mínimo 80%?
+- [ ] ¿Coverage mínimo 95%?
 - [ ] ¿Path aliases usados (no rutas relativas)?
 
 ---

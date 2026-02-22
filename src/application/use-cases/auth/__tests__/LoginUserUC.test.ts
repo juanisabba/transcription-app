@@ -62,7 +62,7 @@ describe("LoginUserUC", () => {
     it("should throw ValidationError if email is missing", async () => {
       const request: LoginUserDTO = { email: "", password: validPassword };
       await expect(useCase.execute(request)).rejects.toThrow(
-        "Email and password are required"
+        "El email y la contraseña son requeridos"
       );
       expect(mockAuthService.authenticateWithPassword).not.toHaveBeenCalled();
     });
@@ -70,19 +70,19 @@ describe("LoginUserUC", () => {
     it("should throw ValidationError if password is missing", async () => {
       const request: LoginUserDTO = { email: validEmail, password: "" };
       await expect(useCase.execute(request)).rejects.toThrow(
-        "Email and password are required"
+        "El email y la contraseña son requeridos"
       );
       expect(mockAuthService.authenticateWithPassword).not.toHaveBeenCalled();
     });
 
     it("should propagate authentication errors from authService", async () => {
       mockAuthService.authenticateWithPassword.mockRejectedValue(
-        new Error("Invalid email or password")
+        new Error("Email o contraseña inválidos")
       );
 
       const request: LoginUserDTO = { email: validEmail, password: "wrongpass" };
       await expect(useCase.execute(request)).rejects.toThrow(
-        "Invalid email or password"
+        "Email o contraseña inválidos"
       );
     });
   });

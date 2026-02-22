@@ -131,5 +131,37 @@ describe("ListTranscriptionsUseCase", () => {
       expect(result.totalPages).toBe(2);
       expect(result.currentPage).toBe(3);
     });
+
+    it("should clamp page and pageSize when less than 1", async () => {
+      mockTranscriptionRepo.findByUserId.mockResolvedValue({
+        items: [makeTranscription("t-1", userId)],
+        hasMore: false,
+      });
+
+      const result = await useCase.execute(userId, 0, 0);
+
+      expect(mockTranscriptionRepo.findByUserId).toHaveBeenCalledWith(
+        userId,
+        1,
+        undefined
+      );
+      expect(result.currentPage).toBe(1);
+    });
+
+    it("should return empty when hasMore is true but nextCursor is undefined (page 2)", async () => {
+      mockTranscriptionRepo.findByUserId.mockResolvedValue({
+        items: Array.from({ length: 10 }, (_, i) =>
+          makeTranscription(`t-${i}`, userId)
+        ),
+        hasMore: true,
+        nextCursor: undefined,
+      });
+
+      const result = await useCase.execute(userId, 2, 10);
+
+      expect(result.items).toHaveLength(0);
+      expect(result.totalPages).toBe(1);
+      expect(result.currentPage).toBe(2);
+    });
   });
 });
