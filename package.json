@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "Transcription Service",
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": ["linux", "win32"],
+      "cpu": ["x64"]
+    }
+  },
   "scripts": {
     "setup:local-db": "ts-node scripts/setup-local-db.ts",
     "dev:api": "pnpm --filter api run dev",
@@ -10,6 +16,8 @@
     "dev": "concurrently \"pnpm:dev:api\" \"pnpm:dev:client\"",
     "build": "pnpm --filter api run build && pnpm --filter client run build",
     "test": "pnpm --filter api run test && pnpm --filter client run test",
+    "test:coverage:api": "pnpm --filter api run test:coverage",
+    "test:coverage:client": "pnpm --filter client run test:coverage",
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
     "lint": "pnpm --filter api run lint && pnpm --filter client run lint",

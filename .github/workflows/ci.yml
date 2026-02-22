@@ -116,11 +116,6 @@ jobs:
         image: amazon/dynamodb-local:latest
         ports:
           - 8000:8000
-        options: >-
-          --health-cmd "curl -f http://localhost:8000/shell/ || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -151,6 +146,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: api
+
+      - name: Wait for DynamoDB Local
+        run: npx wait-on tcp:localhost:8000 --timeout 30000
 
       - name: Run integration tests
         run: pnpm test -- --testPathPattern="integration"

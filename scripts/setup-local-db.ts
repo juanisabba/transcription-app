@@ -35,17 +35,12 @@ async function ensureTable(
 ) {
   try {
     await client.send(new DescribeTableCommand({ TableName: tableName }));
-    console.log(`[setup-local-db] La tabla "${tableName}" ya existe.`);
   } catch {
-    console.log(`[setup-local-db] Creando tabla "${tableName}"...`);
     await client.send(new CreateTableCommand(createParams));
-    console.log(`[setup-local-db] Tabla "${tableName}" creada correctamente.`);
   }
 }
 
 async function main() {
-  console.log(`[setup-local-db] Conectando a DynamoDB en: ${ENDPOINT}`);
-
   await ensureTable(USERS_TABLE, {
     TableName: USERS_TABLE,
     BillingMode: "PAY_PER_REQUEST",
