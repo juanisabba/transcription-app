@@ -73,4 +73,15 @@ export interface ITranscriptionRepository {
    * @returns Una promesa que se resuelve cuando la eliminación se ha aplicado.
    */
   delete(id: string, userId: string): Promise<void>;
+
+  /**
+   * Obtiene estadísticas de uso del usuario: suma de duration agrupada por type.
+   * Los registros sin duration o con duration null se tratan como 0.
+   *
+   * @param userId - Identificador del usuario.
+   * @returns Total de segundos por tipo (batch, realtime).
+   */
+  getStatsByUserId(
+    userId: string
+  ): Promise<{ totalBatchSeconds: number; totalRealtimeSeconds: number }>;
 }

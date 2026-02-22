@@ -31,7 +31,7 @@ const client = new DynamoDBClient({
 
 async function ensureTable(
   tableName: string,
-  createParams: CreateTableCommandInput
+  createParams: CreateTableCommandInput,
 ) {
   try {
     await client.send(new DescribeTableCommand({ TableName: tableName }));
@@ -79,6 +79,14 @@ async function main() {
       {
         IndexName: "status-index",
         KeySchema: [{ AttributeName: "status", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+      {
+        IndexName: "createdAt-index",
+        KeySchema: [
+          { AttributeName: "userId", KeyType: "HASH" },
+          { AttributeName: "createdAt", KeyType: "RANGE" },
+        ],
         Projection: { ProjectionType: "ALL" },
       },
     ],

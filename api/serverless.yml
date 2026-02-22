@@ -9,6 +9,8 @@ provider:
   stage: ${env:STAGE, 'dev'}
   apiGateway:
     shouldStartNameWithService: true
+    binaryMediaTypes:
+      - "multipart/form-data"
   memorySize: 512
   timeout: 30
 
@@ -125,6 +127,18 @@ functions:
             providerARNs:
               - !GetAtt CognitoUserPool.Arn
 
+  realtimeToken:
+    handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
+    events:
+      - http:
+          path: transcriptions/realtime/token
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
   saveRealtimeTranscription:
     handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
     events:
@@ -142,6 +156,18 @@ functions:
     events:
       - http:
           path: transcriptions
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            providerARNs:
+              - !GetAtt CognitoUserPool.Arn
+
+  statsTranscriptions:
+    handler: dist/src/presentation/http/transcription/StatsHandler.handler
+    events:
+      - http:
+          path: transcriptions/stats
           method: get
           cors: true
           authorizer:
@@ -281,14 +307,14 @@ resources:
         CorsConfiguration:
           CorsRules:
             - AllowedHeaders:
-                - '*'
+                - "*"
               AllowedMethods:
                 - GET
                 - PUT
                 - POST
                 - HEAD
               AllowedOrigins:
-                - 'http://localhost:3000'
+                - "http://localhost:3000"
                 # Añadir aquí el origen de producción cuando lo tengas
                 # - 'https://tu-dominio.com'
               ExposedHeaders:
