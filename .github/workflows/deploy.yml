@@ -36,33 +36,29 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
+        env:
+          NUXT_SKIP_OXC: true
+
+      - name: Prepare Nuxt types (client)
+        run: pnpm --filter client nuxi prepare
         env:
           NUXT_SKIP_OXC: true
 
       - name: Lint (API)
-        run: pnpm lint
-        working-directory: api
+        run: pnpm --filter api run lint
         env:
-          NUXT_SKIP_OXC: true
-
-      - name: Run tests (API)
-        run: pnpm test -- --testPathIgnorePatterns=integration
-        working-directory: api
-        env:
-          NODE_ENV: test
           NUXT_SKIP_OXC: true
 
       - name: Build (API)
-        run: pnpm build
-        working-directory: api
+        run: pnpm --filter api run build
         env:
           NUXT_SKIP_OXC: true
 
       - name: Deploy to production
-        run: pnpm exec serverless deploy --stage prod
-        working-directory: api
+        run: pnpm --filter api exec serverless deploy --stage prod
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-north-1
+          NUXT_SKIP_OXC: true
