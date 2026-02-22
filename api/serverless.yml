@@ -56,7 +56,6 @@ provider:
     SPEECHMATICS_WEBHOOK_SECRET: ${env:SPEECHMATICS_WEBHOOK_SECRET, ''}
     SPEECHMATICS_MANAGEMENT_URL: ${env:SPEECHMATICS_MANAGEMENT_URL, 'https://mp.speechmatics.com/v1'}
     SPEECHMATICS_RT_WS_URL: ${env:SPEECHMATICS_RT_WS_URL, 'wss://eu2.rt.speechmatics.com/v2/'}
-    AWS_REGION: ${self:provider.region}
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, ''}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, ''}
     COGNITO_AUTO_CONFIRM: ${env:COGNITO_AUTO_CONFIRM, 'false'}
