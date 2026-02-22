@@ -96,7 +96,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   # ===== TRANSCRIPTION ENDPOINTS =====
@@ -109,7 +109,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   realtimeSession:
@@ -120,7 +120,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   realtimeToken:
@@ -131,7 +131,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   saveRealtimeTranscription:
@@ -142,7 +142,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   listTranscriptions:
@@ -153,7 +153,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   statsTranscriptions:
@@ -164,7 +164,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   downloadTranscription:
@@ -175,7 +175,7 @@ functions:
           method: get
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   deleteTranscription:
@@ -186,7 +186,7 @@ functions:
           method: delete
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   confirmUpload:
@@ -197,7 +197,7 @@ functions:
           method: post
           cors: true
           authorizer:
-            name: CognitoAuthorizer
+            type: COGNITO_USER_POOLS
             arn: !GetAtt CognitoUserPool.Arn
 
   # ===== S3 EVENT TRIGGERS =====
