@@ -41,8 +41,10 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
         working-directory: api
+        env:
+          NUXT_SKIP_PREPARE: true
 
       - name: Type check
         run: pnpm type-check
@@ -86,7 +88,9 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+        env:
+          NUXT_SKIP_PREPARE: true
 
       - name: Run API unit tests with coverage
         run: pnpm --filter api run test:coverage -- --testPathIgnorePatterns="integration"
@@ -144,8 +148,10 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
         working-directory: api
+        env:
+          NUXT_SKIP_PREPARE: true
 
       - name: Wait for DynamoDB Local
         run: npx wait-on tcp:localhost:8000 --timeout 30000
@@ -198,7 +204,9 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+        env:
+          NUXT_SKIP_PREPARE: true
 
       - name: Build
         run: pnpm build
@@ -233,7 +241,9 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+        env:
+          NUXT_SKIP_PREPARE: true
 
       - name: Build client
         run: pnpm --filter client run build
