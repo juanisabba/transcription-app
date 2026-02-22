@@ -54,7 +54,9 @@ export class CreateRealtimeSessionUseCase {
       "",
       "",
       now,
-      now
+      now,
+      undefined,
+      "realtime"
     );
     await this.transcriptionRepository.save(transcription);
 

@@ -1,1 +1,1 @@
-export { Transcription, type TranscriptionStatus } from "./Transcription";
+export { Transcription, type TranscriptionStatus, type TranscriptionType } from "./Transcription";

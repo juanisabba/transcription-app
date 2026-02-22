@@ -8,6 +8,11 @@ export type TranscriptionStatus =
   | "failed";
 
 /**
+ * Tipo de transcripción según su origen: archivo subido (batch) o grabación en tiempo real.
+ */
+export type TranscriptionType = "batch" | "realtime";
+
+/**
  * Entidad de dominio que representa una transcripción en Vocali.
  *
  * - Propiedades inmutables: id, userId, fileName, s3Path, createdAt.
@@ -24,6 +29,8 @@ export class Transcription {
   public content: string;
   public readonly createdAt: Date;
   public updatedAt: Date;
+  public type?: TranscriptionType;
+  public duration?: number;
 
   /**
    * Crea una nueva instancia de `Transcription`.
@@ -37,6 +44,8 @@ export class Transcription {
    * @param content - Texto transcrito (puede estar vacío si está en proceso).
    * @param createdAt - Fecha y hora de creación.
    * @param updatedAt - Fecha y hora de última actualización.
+   * @param type - Tipo de transcripción: "batch" (archivo subido) o "realtime" (grabación en vivo).
+   * @param duration - Duración del audio en segundos (opcional).
    */
   constructor(
     id: string,
@@ -47,7 +56,9 @@ export class Transcription {
     s3Path: string,
     content: string,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
+    duration?: number,
+    type?: TranscriptionType
   ) {
     this.id = id;
     this.userId = userId;
@@ -58,6 +69,8 @@ export class Transcription {
     this.content = content;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.duration = duration;
+    this.type = type;
   }
 
   /**
@@ -77,6 +90,36 @@ export class Transcription {
    */
   public updateContent(content: string): void {
     this.content = content;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Establece el tipo de transcripción (batch/realtime).
+   */
+  public setType(type: TranscriptionType): void {
+    this.type = type;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Establece la duración del audio en segundos.
+   */
+  public setDuration(duration: number): void {
+    this.duration = duration;
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Actualiza metadatos de archivo (s3Path, fileName, fileSize) para transcripciones realtime.
+   */
+  public updateRealtimeMetadata(
+    s3Path: string,
+    fileName: string,
+    fileSize: number
+  ): void {
+    (this as { s3Path: string }).s3Path = s3Path;
+    (this as { fileName: string }).fileName = fileName;
+    (this as { fileSize: number }).fileSize = fileSize;
     this.updatedAt = new Date();
   }
 }

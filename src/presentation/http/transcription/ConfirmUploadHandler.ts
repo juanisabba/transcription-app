@@ -7,6 +7,7 @@ import { storageService } from "../../../../api/src/infrastructure/adapters/stor
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, UnauthorizedError } from "../../../shared/errors";
+import { isValidUuidV4 } from "../../../shared/utils/validation";
 
 const corsHeaders = {
   "Content-Type": "application/json",
@@ -41,7 +42,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 401,
         body: JSON.stringify({
           code: "UNAUTHORIZED",
-          message: "Missing Authorization header",
+          message: "Falta el header de autorización",
         }),
         headers: corsHeaders,
       };
@@ -51,18 +52,36 @@ export const handler: APIGatewayProxyHandler = async (
     const userId = claims.sub;
 
     const transcriptionId = event.pathParameters?.id;
-    if (!transcriptionId) {
+    if (!transcriptionId || transcriptionId.trim() === "") {
       return {
         statusCode: 400,
         body: JSON.stringify({
           code: "VALIDATION_ERROR",
-          message: "Missing transcription id in path",
+          message: "Falta el id de transcripción en la ruta",
+        }),
+        headers: corsHeaders,
+      };
+    }
+    if (!isValidUuidV4(transcriptionId)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          code: "VALIDATION_ERROR",
+          message: "transcriptionId tiene formato inválido",
         }),
         headers: corsHeaders,
       };
     }
 
-    console.log("[Confirm] Recibida confirmación para ID:", transcriptionId);
+    let duration: number | undefined;
+    try {
+      const body = JSON.parse(event.body ?? "{}") as { duration?: number };
+      if (typeof body.duration === "number" && body.duration >= 0) {
+        duration = body.duration;
+      }
+    } catch {
+      // body vacío o inválido, duration queda undefined
+    }
 
     const transcription = await transcriptionRepository.findById(
       transcriptionId,
@@ -73,13 +92,13 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 404,
         body: JSON.stringify({
           code: "NOT_FOUND",
-          message: `Transcription ${transcriptionId} not found`,
+          message: `Transcripción ${transcriptionId} no encontrada`,
         }),
         headers: corsHeaders,
       };
     }
 
-    await useCase.execute(userId, transcriptionId, transcription.s3Path);
+    await useCase.execute(userId, transcriptionId, transcription.s3Path, "en", duration);
 
     return {
       statusCode: 200,
@@ -95,7 +114,7 @@ export const handler: APIGatewayProxyHandler = async (
     if (error instanceof UnauthorizedError || (error instanceof Error && error.message.includes("expired"))) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Invalid or expired token" }),
+        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Token inválido o expirado" }),
         headers: corsHeaders,
       };
     }
@@ -112,7 +131,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 500,
       body: JSON.stringify({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Internal Server Error",
+        message: "Error interno del servidor",
       }),
       headers: corsHeaders,
     };

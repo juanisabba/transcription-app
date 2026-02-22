@@ -4,7 +4,8 @@ import type {
 } from "../../../application/ports/IExternalApiService";
 
 const SPEECHMATICS_BASE_URL =
-  process.env.SPEECHMATICS_BASE_URL ?? "https://eu1.asr.api.speechmatics.com/v2";
+  process.env.SPEECHMATICS_BASE_URL ??
+  "https://eu1.asr.api.speechmatics.com/v2";
 
 const SPEECHMATICS_MANAGEMENT_URL =
   process.env.SPEECHMATICS_MANAGEMENT_URL ?? "https://mp.speechmatics.com/v1";
@@ -44,21 +45,16 @@ export class SpeechMaticsAdapter implements IExternalApiService {
   private readonly baseUrl: string;
   private readonly webhookUrl: string;
 
-  constructor(
-    apiKey?: string,
-    baseUrl?: string,
-    webhookUrl?: string
-  ) {
+  constructor(apiKey?: string, baseUrl?: string, webhookUrl?: string) {
     this.apiKey = apiKey ?? process.env.SPEECHMATICS_API_KEY ?? "";
     this.baseUrl = baseUrl ?? SPEECHMATICS_BASE_URL;
-    this.webhookUrl =
-      webhookUrl ?? process.env.SPEECHMATICS_WEBHOOK_URL ?? "";
+    this.webhookUrl = webhookUrl ?? process.env.SPEECHMATICS_WEBHOOK_URL ?? "";
   }
 
   private async request<T>(
     method: string,
     path: string,
-    body?: FormData | null
+    body?: FormData | null,
   ): Promise<{ status: number; data: T }> {
     const url = `${this.baseUrl}${path}`;
     const init: RequestInit = {
@@ -80,7 +76,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
 
   async submitJob(
     s3Url: string,
-    language: string = "en"
+    language: string = "en",
   ): Promise<{ jobId: string }> {
     const config: Record<string, unknown> = {
       type: "transcription",
@@ -98,8 +94,6 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       },
     ];
 
-    console.log("[SpeechMaticsAdapter] Config enviada a Speechmatics:", JSON.stringify(config, null, 2));
-
     const formData = new FormData();
     formData.append("config", JSON.stringify(config));
 
@@ -107,14 +101,12 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       const { status, data } = await this.request<SpeechmaticsJobResponse>(
         "POST",
         "/jobs",
-        formData
+        formData,
       );
-
-      console.log("[Speechmatics] Respuesta de la API:", { status, data, jobId: (data as SpeechmaticsJobResponse).id });
 
       if (status !== 201 || !(data as SpeechmaticsJobResponse).id) {
         throw new Error(
-          `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`
+          `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`,
         );
       }
 
@@ -129,24 +121,25 @@ export class SpeechMaticsAdapter implements IExternalApiService {
   async getJobStatus(jobId: string): Promise<JobStatus> {
     const { data } = await this.request<SpeechmaticsJobStatusResponse>(
       "GET",
-      `/jobs/${jobId}`
+      `/jobs/${jobId}`,
     );
 
-    const status = (data as SpeechmaticsJobStatusResponse).job?.status ?? "running";
+    const status =
+      (data as SpeechmaticsJobStatusResponse).job?.status ?? "running";
     return this.normalizeStatus(status);
   }
 
   async getResult(jobId: string): Promise<{ transcript: string }> {
     const { data } = await this.request<SpeechmaticsTranscriptResponse>(
       "GET",
-      `/jobs/${jobId}/transcript`
+      `/jobs/${jobId}/transcript`,
     );
 
     const results = (data as SpeechmaticsTranscriptResponse).results ?? [];
     const transcript = results
       .filter(
         (r: SpeechmaticsTranscriptResult) =>
-          r.type === "word" && r.alternatives?.[0]?.content
+          r.type === "word" && r.alternatives?.[0]?.content,
       )
       .map((r: SpeechmaticsTranscriptResult) => r.alternatives![0].content)
       .join(" ")
@@ -155,7 +148,9 @@ export class SpeechMaticsAdapter implements IExternalApiService {
     return { transcript };
   }
 
-  async createRealtimeToken(ttl: number = 60): Promise<{ token: string; wsUrl: string }> {
+  async createRealtimeToken(
+    ttl: number = 60,
+  ): Promise<{ token: string; wsUrl: string }> {
     const url = `${SPEECHMATICS_MANAGEMENT_URL}/api_keys?type=rt`;
     const response = await fetch(url, {
       method: "POST",
@@ -170,7 +165,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
     if (!response.ok) {
       const body = await response.text().catch(() => "");
       throw new Error(
-        `Speechmatics realtime token creation failed: ${response.status} ${body}`
+        `Speechmatics realtime token creation failed: ${response.status} ${body}`,
       );
     }
 
