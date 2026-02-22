@@ -17,8 +17,8 @@ export class FileTooLargeException extends ValidationError {
    */
   constructor(sizeBytes?: number) {
     const message = sizeBytes !== undefined
-      ? `File size ${sizeBytes} bytes exceeds maximum allowed (20 MB)`
-      : "File size exceeds maximum allowed (20 MB)";
+      ? `El archivo de ${sizeBytes} bytes supera el máximo permitido (20 MB)`
+      : "El tamaño del archivo supera el máximo permitido (20 MB)";
     super(message);
   }
 }

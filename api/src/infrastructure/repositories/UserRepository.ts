@@ -12,7 +12,6 @@ export class UserRepository implements IUserRepository {
   constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    console.log(`[UserRepo] Finding by email: ${email}`);
     try {
       const result = await this.dynamodbClient.send(
         new QueryCommand({
@@ -38,7 +37,6 @@ export class UserRepository implements IUserRepository {
   }
 
   async findById(id: string): Promise<User | null> {
-    console.log(`[UserRepo] Finding by ID: ${id}`);
     try {
       const result = await this.dynamodbClient.send(
         new GetCommand({
@@ -77,8 +75,7 @@ export class UserRepository implements IUserRepository {
           ConditionExpression: "attribute_not_exists(userId)",
         })
       );
-
-      console.log(`User saved: ${user.email}`);
+      console.log(`[UserRepo] User saved to DynamoDB: ${user.email}`);
     } catch (error) {
       const err = error as { name?: string };
       if (err.name === "ConditionalCheckFailedException") {
@@ -90,7 +87,6 @@ export class UserRepository implements IUserRepository {
   }
 
   async updateLastLogin(id: string): Promise<void> {
-    console.log(`[UserRepo] Updating last login: ${id}`);
     try {
       await this.dynamodbClient.send(
         new UpdateCommand({
@@ -104,8 +100,6 @@ export class UserRepository implements IUserRepository {
           },
         })
       );
-
-      console.log(`Updated last login for user: ${id}`);
     } catch (error) {
       console.error("[UserRepo] Error updating last login:", error);
       throw error;

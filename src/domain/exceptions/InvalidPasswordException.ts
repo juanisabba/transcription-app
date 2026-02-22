@@ -19,7 +19,7 @@ export class InvalidPasswordException extends ValidationError {
    * @param reason - Motivo específico por el cual la contraseña es inválida.
    */
   constructor(
-    reason: string = "Password does not meet security requirements",
+    reason: string = "La contraseña no cumple los requisitos de seguridad",
   ) {
     super(reason);
   }

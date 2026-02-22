@@ -15,7 +15,7 @@ export class InvalidCredentialsException extends UnauthorizedError {
    * Crea una nueva instancia de `InvalidCredentialsException`.
    */
   constructor() {
-    super("Invalid email or password");
+    super("Email o contraseña inválidos");
   }
 }
 

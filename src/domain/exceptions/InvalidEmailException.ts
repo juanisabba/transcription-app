@@ -17,7 +17,7 @@ export class InvalidEmailException extends ValidationError {
    * @param email - Email con formato inválido.
    */
   constructor(email: string) {
-    super(`Invalid email format: ${email}`);
+    super(`Formato de email inválido: ${email}`);
   }
 }
 

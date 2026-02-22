@@ -17,7 +17,7 @@ export class UserAlreadyExistsException extends ConflictError {
    * @param email - Email del usuario que ya existe.
    */
   constructor(email: string) {
-    super(`User with email ${email} already exists`);
+    super(`Ya existe un usuario con el email ${email}`);
   }
 }
 

@@ -5,7 +5,5 @@ import { JobMappingRepository } from "../../../../src/infrastructure/repositorie
 const dynamodbClient = new DynamoDBClient({
   region: process.env.AWS_REGION || "eu-west-1",
 });
-console.log(`[DynamoDB] Conectando a: AWS DynamoDB (${process.env.AWS_REGION || "eu-west-1"})`);
-
 const docClient = DynamoDBDocumentClient.from(dynamodbClient);
 export const jobMappingRepository = new JobMappingRepository(docClient);

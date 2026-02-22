@@ -19,8 +19,8 @@ export class InvalidFileTypeException extends ValidationError {
    */
   constructor(fileType?: string) {
     const message = fileType !== undefined
-      ? `Invalid file type: ${fileType}`
-      : "Invalid file type";
+      ? `Tipo de archivo no válido: ${fileType}`
+      : "Tipo de archivo no válido";
     super(message);
   }
 }

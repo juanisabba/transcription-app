@@ -37,11 +37,23 @@ export class ValidationError extends AppError {
 }
 
 /**
+ * Error when the user lacks permission to perform the action.
+ * Maps to HTTP 403 Forbidden.
+ */
+export class ForbiddenError extends AppError {
+  constructor(message: string = "Acceso denegado") {
+    super("FORBIDDEN", 403, message);
+    this.name = "ForbiddenError";
+    Object.setPrototypeOf(this, ForbiddenError.prototype);
+  }
+}
+
+/**
  * Error when the request is not authenticated or the token is invalid/expired.
  * Maps to HTTP 401 Unauthorized.
  */
 export class UnauthorizedError extends AppError {
-  constructor(message: string = "Unauthorized") {
+  constructor(message: string = "No autorizado") {
     super("UNAUTHORIZED", 401, message);
     this.name = "UnauthorizedError";
     Object.setPrototypeOf(this, UnauthorizedError.prototype);
@@ -69,7 +81,7 @@ export class ConflictError extends AppError {
  */
 export class NotFoundError extends AppError {
   constructor(resource: string, id: string) {
-    super("NOT_FOUND", 404, `${resource} with id ${id} not found`);
+    super("NOT_FOUND", 404, `No se encontró ${resource} con id ${id}`);
     this.name = "NotFoundError";
     Object.setPrototypeOf(this, NotFoundError.prototype);
   }

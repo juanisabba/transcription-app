@@ -6,6 +6,15 @@
  */
 export interface IStorageService {
   /**
+   * Uploads a file (buffer) directly to S3.
+   *
+   * @param key - S3 object key (path) where the file will be stored.
+   * @param body - File contents as Buffer or Uint8Array.
+   * @param contentType - Optional MIME type (e.g. "audio/wav", "audio/webm").
+   */
+  uploadFile(key: string, body: Buffer | Uint8Array, contentType?: string): Promise<void>;
+
+  /**
    * Generates a presigned URL for uploading a file to S3.
    *
    * The client can use this URL to PUT the file directly to S3 without
