@@ -7,7 +7,8 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type { IStorageService } from "../../../application/ports/IStorageService";
 
-const DEFAULT_EXPIRES_IN = 3600; // 1 hour
+/** 1 hora. Tiempo razonable para subida/descarga sin comprometer seguridad. */
+const DEFAULT_EXPIRES_IN = 3600;
 
 /**
  * S3 implementation of IStorageService.
@@ -24,6 +25,21 @@ export class S3StorageAdapter implements IStorageService {
     this.bucketName = bucketName ?? process.env.S3_BUCKET_NAME ?? "";
   }
 
+  async uploadFile(
+    key: string,
+    body: Buffer | Uint8Array,
+    contentType?: string
+  ): Promise<void> {
+    await this.s3Client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: body,
+        ...(contentType && { ContentType: contentType }),
+      })
+    );
+  }
+
   /**
    * Genera una URL presignada para PUT.
    * Solo Bucket y Key: sin ChecksumAlgorithm ni headers x-amz-checksum*,
@@ -34,13 +50,16 @@ export class S3StorageAdapter implements IStorageService {
     key: string,
     expiresIn: number = DEFAULT_EXPIRES_IN
   ): Promise<string> {
+    const safeExpiresIn = Math.min(Math.max(expiresIn, 60), 86400); // entre 1 min y 24 h
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- S3Client/presigner type mismatch in monorepo
-    const url = await getSignedUrl(this.s3Client as any, command, { expiresIn });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- S3Client/presigner type mismatch en monorepo (handlers privados)
+    const url = await getSignedUrl(this.s3Client as any, command, {
+      expiresIn: safeExpiresIn,
+    });
     return url;
   }
 
@@ -48,13 +67,16 @@ export class S3StorageAdapter implements IStorageService {
     key: string,
     expiresIn: number = DEFAULT_EXPIRES_IN
   ): Promise<string> {
+    const safeExpiresIn = Math.min(Math.max(expiresIn, 60), 86400); // entre 1 min y 24 h
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
       Key: key,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- S3Client/presigner type mismatch in monorepo
-    const url = await getSignedUrl(this.s3Client as any, command, { expiresIn });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- S3Client/presigner type mismatch en monorepo (handlers privados)
+    const url = await getSignedUrl(this.s3Client as any, command, {
+      expiresIn: safeExpiresIn,
+    });
     return url;
   }
 

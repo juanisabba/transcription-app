@@ -4,6 +4,7 @@ import { transcriptionRepository } from "../../../../api/src/infrastructure/repo
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, NotFoundError, UnauthorizedError } from "../../../shared/errors";
+import { isValidUuidV4 } from "../../../shared/utils/validation";
 
 const corsHeaders = {
   "Content-Type": "application/json",
@@ -33,7 +34,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 401,
         body: JSON.stringify({
           code: "UNAUTHORIZED",
-          message: "Missing Authorization header",
+          message: "Falta el header de autorización",
         }),
         headers: corsHeaders,
       };
@@ -43,12 +44,22 @@ export const handler: APIGatewayProxyHandler = async (
     const userId = claims.sub;
 
     const transcriptionId = event.pathParameters?.id;
-    if (!transcriptionId) {
+    if (!transcriptionId || transcriptionId.trim() === "") {
       return {
         statusCode: 400,
         body: JSON.stringify({
           code: "VALIDATION_ERROR",
-          message: "Missing transcription id in path",
+          message: "Falta el id de transcripción en la ruta",
+        }),
+        headers: corsHeaders,
+      };
+    }
+    if (!isValidUuidV4(transcriptionId)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          code: "VALIDATION_ERROR",
+          message: "transcriptionId tiene formato inválido",
         }),
         headers: corsHeaders,
       };
@@ -71,7 +82,7 @@ export const handler: APIGatewayProxyHandler = async (
     if (error instanceof UnauthorizedError || (error instanceof Error && error.message.includes("expired"))) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Invalid or expired token" }),
+        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Token inválido o expirado" }),
         headers: corsHeaders,
       };
     }
@@ -92,7 +103,7 @@ export const handler: APIGatewayProxyHandler = async (
       };
     }
 
-    if (error instanceof Error && error.message.includes("not ready for download")) {
+    if (error instanceof Error && error.message.includes("no está lista para descargar")) {
       return {
         statusCode: 422,
         body: JSON.stringify({
@@ -107,7 +118,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 500,
       body: JSON.stringify({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Internal Server Error",
+        message: "Error interno del servidor",
       }),
       headers: corsHeaders,
     };

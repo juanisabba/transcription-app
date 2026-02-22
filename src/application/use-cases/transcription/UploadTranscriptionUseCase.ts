@@ -4,15 +4,14 @@ import type { UploadTranscriptionDTO, PresignedUrlDTO } from "@application/dto/t
 import { Transcription } from "@domain/entities/Transcription";
 import { ValidationError } from "@shared/errors";
 import { InvalidFileTypeException } from "@domain/exceptions/InvalidFileTypeException";
+import { MAX_FILE_SIZE_BYTES } from "@shared/utils/validation";
 import { v4 as uuid } from "uuid";
 
 /** Content-Type debe ser audio/* (audio/mp3, audio/ogg, audio/wav, etc.). */
 const AUDIO_MIME_PREFIX = "audio/";
 
-const PRESIGNED_URL_EXPIRES_IN = 3600; // 1 hour
-
-/** Límite máximo 20 MB según requisitos (20.971.520 bytes). */
-const MAX_FILE_SIZE_BYTES = 20_971_520;
+/** URLs presignadas: 1 hora. Tiempo razonable para subida sin comprometer seguridad. */
+const PRESIGNED_URL_EXPIRES_IN = 3600;
 
 /**
  * Formato de audio preferido: OGG/Opus (nativo de WhatsApp).
@@ -50,11 +49,19 @@ export class UploadTranscriptionUseCase {
 
     // Paso 1: Validar request
     if (!fileName || typeof fileName !== "string" || !fileName.trim()) {
-      throw new ValidationError("fileName is required");
+      throw new ValidationError("fileName es requerido");
     }
 
-    if (typeof fileSize !== "number") {
+    if (typeof fileSize !== "number" || !Number.isFinite(fileSize)) {
       throw new ValidationError("fileSize must be a number");
+    }
+    if (fileSize < 0) {
+      throw new ValidationError("fileSize no puede ser negativo");
+    }
+    if (fileSize > MAX_FILE_SIZE_BYTES) {
+      throw new ValidationError(
+        `fileSize excede el límite de 20 MB (máx ${MAX_FILE_SIZE_BYTES} bytes)`,
+      );
     }
 
     if (contentType !== undefined && contentType !== null && contentType !== "") {
@@ -62,12 +69,6 @@ export class UploadTranscriptionUseCase {
       if (!ct.startsWith(AUDIO_MIME_PREFIX)) {
         throw new InvalidFileTypeException(contentType);
       }
-    }
-
-    if (fileSize > MAX_FILE_SIZE_BYTES) {
-      throw new ValidationError(
-        `fileSize exceeds 20 MB limit (max ${MAX_FILE_SIZE_BYTES} bytes)`
-      );
     }
 
     // Paso 3: Crear entidad Transcription
@@ -84,12 +85,14 @@ export class UploadTranscriptionUseCase {
       s3Path,
       "",
       now,
-      now
+      now,
+      undefined,
+      "batch"
     );
 
     // Paso 4: Guardar en BD
     await this.transcriptionRepository.save(transcription);
-    console.log("[Upload] Transcription guardada en DynamoDB, ID:", transcriptionId, "- El cliente debe subir a S3; el evento S3 iniciará el envío a Speechmatics.");
+    console.log(`[Upload] Saved to DynamoDB: ${transcriptionId}`);
 
     // Paso 5: Generar presigned URL
     const uploadUrl = await this.storageService.generatePresignedUrl(

@@ -41,7 +41,7 @@ export class ProcessTranscriptionResultUseCase {
     );
 
     if (!transcription) {
-      throw new Error(`Transcription ${transcriptionId} not found`);
+      throw new Error(`Transcripción ${transcriptionId} no encontrada`);
     }
 
     transcription.updateStatus("completed");

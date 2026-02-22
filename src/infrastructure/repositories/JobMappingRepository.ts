@@ -6,11 +6,7 @@ export class JobMappingRepository implements IJobMappingRepository {
   private readonly tableName =
     process.env.DYNAMODB_JOB_MAPPING_TABLE || "vocali-job-mapping-dev";
 
-  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {
-    this.dynamodbClient.config
-      .region()
-      .then((r) => console.log("🌐 DynamoDB conectada a región:", r));
-  }
+  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
 
   async save(
     jobId: string,

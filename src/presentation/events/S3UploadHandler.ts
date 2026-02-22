@@ -4,6 +4,7 @@ import { transcriptionRepository } from "../../../api/src/infrastructure/reposit
 import { jobMappingRepository } from "../../../api/src/infrastructure/repositories/jobMappingRepositoryInstance";
 import { speechMaticsAdapter } from "../../../api/src/infrastructure/adapters/external-services/speechMaticsAdapterInstance";
 import { storageService } from "../../../api/src/infrastructure/adapters/storage/storageServiceInstance";
+import { MAX_FILE_SIZE_BYTES } from "../../shared/utils/validation";
 
 const useCase = new StartTranscriptionUseCase(
   transcriptionRepository,
@@ -34,10 +35,14 @@ function parseS3Key(key: string): { userId: string; transcriptionId: string } | 
 
 export const handler: S3Handler = async (event: S3Event): Promise<void> => {
   for (const record of event.Records) {
-    const bucket = record.s3.bucket.name;
     const key = record.s3.object.key;
-
-    console.log(`[S3UploadHandler] Processing object: s3://${bucket}/${key}`);
+    const objectSize = record.s3.object.size ?? 0;
+    if (objectSize > MAX_FILE_SIZE_BYTES) {
+      console.error(
+        `[S3UploadHandler] Object size ${objectSize} exceeds limit ${MAX_FILE_SIZE_BYTES}, skipping`
+      );
+      continue;
+    }
 
     const parsed = parseS3Key(key);
     if (!parsed) {
@@ -47,13 +52,9 @@ export const handler: S3Handler = async (event: S3Event): Promise<void> => {
 
     const { userId, transcriptionId } = parsed;
 
-    console.log("[S3UploadHandler] Iniciando envío a Speechmatics para ID:", transcriptionId);
-
     try {
       await useCase.execute(userId, transcriptionId, key);
-      console.log(
-        `[S3UploadHandler] Transcription job started: transcriptionId=${transcriptionId}, userId=${userId}`
-      );
+      console.log(`[S3UploadHandler] Speechmatics job submitted: transcriptionId=${transcriptionId}`);
     } catch (error) {
       console.error(
         `[S3UploadHandler] Failed to start transcription job for transcriptionId=${transcriptionId}:`,

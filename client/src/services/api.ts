@@ -17,14 +17,18 @@ api.interceptors.request.use((config) => {
   if (authStore.token) {
     config.headers.Authorization = `Bearer ${authStore.token}`;
   }
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
   return config;
 });
 
 // Interceptor: manejar errores
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  (error: unknown) => {
+    const err = error as { response?: { status?: number } };
+    if (err.response?.status === 401) {
       const authStore = useAuthStore();
       authStore.logout();
       navigateTo("/auth/login");

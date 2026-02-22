@@ -38,12 +38,12 @@ export class DownloadTranscriptionUseCase {
     );
 
     if (!transcription) {
-      throw new NotFoundError("Transcription", transcriptionId);
+      throw new NotFoundError("Transcripción", transcriptionId);
     }
 
     if (transcription.status !== "completed") {
       throw new Error(
-        `Transcription ${transcriptionId} is not ready for download (status: ${transcription.status})`
+        `La transcripción ${transcriptionId} no está lista para descargar (estado: ${transcription.status})`
       );
     }
 

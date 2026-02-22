@@ -50,7 +50,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 401,
         body: JSON.stringify({
           code: "UNAUTHORIZED",
-          message: "Missing Authorization header",
+          message: "Falta el header de autorización",
         }),
         headers: corsHeaders,
       };
@@ -77,7 +77,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 401,
         body: JSON.stringify({
           code: "UNAUTHORIZED",
-          message: "Invalid or expired token",
+          message: "Token inválido o expirado",
         }),
         headers: corsHeaders,
       };
@@ -95,7 +95,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 500,
       body: JSON.stringify({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Internal Server Error",
+        message: "Error interno del servidor",
       }),
       headers: corsHeaders,
     };

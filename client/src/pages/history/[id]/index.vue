@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="min-h-[calc(100vh-4.5rem)] bg-gradient-to-br from-blue-50 to-indigo-100">
     <div class="max-w-4xl mx-auto px-4 py-8">
       <!-- Loading -->
       <div v-if="uiStore.isLoading" class="text-center py-8">
@@ -74,18 +74,33 @@
         </NuxtLink>
       </div>
     </div>
+
+    <!-- Delete confirmation modal -->
+    <CommonDeleteConfirmationModal
+      v-model="showDeleteModal"
+      title="Eliminar transcripción"
+      message="¿Estás seguro de que quieres eliminar esta transcripción? Esta acción no se puede deshacer."
+      :is-loading="uiStore.isLoading"
+      @confirm="confirmDelete"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute();
 const { list, download, remove } = useTranscription();
+const { repairUtf8Mojibake } = useTextEncoding();
 const transcriptionStore = useTranscriptionStore();
 const uiStore = useUiStore();
 
 const transcription = computed(() => {
   const id = route.params.id as string;
-  return transcriptionStore.transcriptions.find(t => t.id === id);
+  const t = transcriptionStore.getTranscriptionById(id);
+  if (!t) return null;
+  return {
+    ...t,
+    content: repairUtf8Mojibake(t.content || ''),
+  };
 });
 
 const copySuccess = ref(false);
@@ -112,15 +127,20 @@ const handleCopy = async () => {
 
 const handleDownload = async () => {
   const id = route.params.id as string;
-  await download(id);
+  await download(id, transcription.value?.fileName || 'transcription');
 };
 
-const handleDelete = async () => {
-  if (confirm('¿Estás seguro de que quieres eliminar esta transcripción?')) {
-    const id = route.params.id as string;
-    await remove(id);
-    await navigateTo('/history');
-  }
+const showDeleteModal = ref(false);
+
+const handleDelete = () => {
+  showDeleteModal.value = true;
+};
+
+const confirmDelete = async () => {
+  const id = route.params.id as string;
+  await remove(id);
+  showDeleteModal.value = false;
+  await navigateTo('/history');
 };
 
 onMounted(async () => {

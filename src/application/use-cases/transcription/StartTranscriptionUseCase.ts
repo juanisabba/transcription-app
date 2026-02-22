@@ -29,15 +29,15 @@ export class StartTranscriptionUseCase {
    * @param transcriptionId - ID de la transcripción creada en estado 'pending'.
    * @param s3Key - Clave S3 del archivo de audio subido.
    * @param language - Idioma del audio (ISO 639-1, por defecto 'en').
+   * @param duration - Duración del audio en segundos (opcional).
    */
   public async execute(
     userId: string,
     transcriptionId: string,
     s3Key: string,
-    language: string = "en"
+    language: string = "en",
+    duration?: number
   ): Promise<void> {
-    console.log(`[StartTranscription] Iniciando proceso para ${transcriptionId}`);
-
     const transcription = await this.transcriptionRepository.findById(
       transcriptionId,
       userId
@@ -45,7 +45,7 @@ export class StartTranscriptionUseCase {
 
     if (!transcription) {
       throw new Error(
-        `Transcription ${transcriptionId} not found for user ${userId}`
+        `Transcripción ${transcriptionId} no encontrada para el usuario ${userId}`
       );
     }
 
@@ -54,14 +54,13 @@ export class StartTranscriptionUseCase {
       PRESIGNED_GET_EXPIRES_IN
     );
 
-    console.log("[Upload] Iniciando envío a Speechmatics para ID:", transcriptionId);
     const { jobId } = await this.externalApiService.submitJob(audioUrl, language);
-
-    console.log("[StartTranscriptionUseCase] Llamando a jobMappingRepository.save:", { jobId, transcriptionId, userId });
     await this.jobMappingRepository.save(jobId, transcriptionId, userId);
-    console.log("[StartTranscriptionUseCase] jobMappingRepository.save completado");
 
     transcription.updateStatus("processing");
+    if (typeof duration === "number" && duration >= 0) {
+      transcription.setDuration(duration);
+    }
     await this.transcriptionRepository.update(transcription);
   }
 }

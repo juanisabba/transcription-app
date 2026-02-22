@@ -6,6 +6,7 @@ import { storageService } from "../../../../api/src/infrastructure/adapters/stor
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, ValidationError, UnauthorizedError } from "../../../shared/errors";
+import { isValidFileSize } from "../../../shared/utils/validation";
 import { FileTooLargeException, InvalidFileTypeException } from "../../../domain/exceptions";
 
 const corsHeaders = {
@@ -39,7 +40,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 401,
         body: JSON.stringify({
           code: "UNAUTHORIZED",
-          message: "Missing Authorization header",
+          message: "Falta el header de autorización",
         }),
         headers: corsHeaders,
       };
@@ -49,9 +50,26 @@ export const handler: APIGatewayProxyHandler = async (
     const userId = claims.sub;
 
     const body = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
+    const fileSize = typeof body.fileSize === "number" ? body.fileSize : 0;
+    if (!isValidFileSize(fileSize)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          code: "VALIDATION_ERROR",
+          message:
+            fileSize < 0
+              ? "fileSize no puede ser negativo"
+              : fileSize > 20_971_520
+                ? "fileSize excede el límite de 20 MB"
+                : "fileSize debe ser un número válido",
+        }),
+        headers: corsHeaders,
+      };
+    }
+
     const request: UploadTranscriptionDTO = {
       fileName: typeof body.fileName === "string" ? body.fileName : "",
-      fileSize: typeof body.fileSize === "number" ? body.fileSize : 0,
+      fileSize,
       contentType: typeof body.contentType === "string" ? body.contentType : undefined,
     };
 
@@ -123,7 +141,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 500,
       body: JSON.stringify({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Internal Server Error",
+        message: "Error interno del servidor",
       }),
       headers: corsHeaders,
     };

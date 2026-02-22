@@ -4,7 +4,14 @@ import { transcriptionRepository } from "../../../../api/src/infrastructure/repo
 import { storageService } from "../../../../api/src/infrastructure/adapters/storage/storageServiceInstance";
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
-import { AppError, NotFoundError, UnauthorizedError } from "../../../shared/errors";
+import {
+  AppError,
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from "../../../shared/errors";
+import { isValidUuidV4 } from "../../../shared/utils/validation";
 
 const corsHeaders = {
   "Content-Type": "application/json",
@@ -37,7 +44,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 401,
         body: JSON.stringify({
           code: "UNAUTHORIZED",
-          message: "Missing Authorization header",
+          message: "Falta el header de autorización",
         }),
         headers: corsHeaders,
       };
@@ -47,18 +54,39 @@ export const handler: APIGatewayProxyHandler = async (
     const userId = claims.sub;
 
     const transcriptionId = event.pathParameters?.id;
-    if (!transcriptionId) {
+    if (!transcriptionId || transcriptionId.trim() === "") {
       return {
         statusCode: 400,
         body: JSON.stringify({
           code: "VALIDATION_ERROR",
-          message: "Missing transcription id in path",
+          message: "transcriptionId es requerido",
+        }),
+        headers: corsHeaders,
+      };
+    }
+    if (!isValidUuidV4(transcriptionId)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          code: "VALIDATION_ERROR",
+          message: "transcriptionId tiene formato inválido",
         }),
         headers: corsHeaders,
       };
     }
 
-    await useCase.execute(transcriptionId, userId);
+    if (!userId || userId.trim() === "") {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({
+          code: "UNAUTHORIZED",
+          message: "userId es requerido",
+        }),
+        headers: corsHeaders,
+      };
+    }
+
+    await useCase.execute(userId, transcriptionId);
 
     return {
       statusCode: 204,
@@ -82,9 +110,25 @@ export const handler: APIGatewayProxyHandler = async (
       };
     }
 
+    if (error instanceof ForbiddenError) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify({ code: error.code, message: error.message }),
+        headers: corsHeaders,
+      };
+    }
+
     if (error instanceof NotFoundError) {
       return {
         statusCode: 404,
+        body: JSON.stringify({ code: error.code, message: error.message }),
+        headers: corsHeaders,
+      };
+    }
+
+    if (error instanceof ValidationError) {
+      return {
+        statusCode: 400,
         body: JSON.stringify({ code: error.code, message: error.message }),
         headers: corsHeaders,
       };
@@ -102,7 +146,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 500,
       body: JSON.stringify({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Internal Server Error",
+        message: "Error interno del servidor",
       }),
       headers: corsHeaders,
     };

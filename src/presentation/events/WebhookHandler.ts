@@ -90,7 +90,6 @@ export const handler: APIGatewayProxyHandler = async (
     (async () => {
       try {
         const transcript = extractTranscriptFromResults(parsed?.results);
-        console.log("[WebhookHandler] Texto extraído:", transcript);
         const mapping = await jobMappingRepository.findByJobId(jobId);
         if (!mapping) {
           console.error(`Webhook: no mapping found for jobId=${jobId}`);
@@ -105,9 +104,6 @@ export const handler: APIGatewayProxyHandler = async (
         }
         const transcriptionIdToUse =
           mapping.transcriptionId ?? (mapping as { id?: string }).id ?? jobId;
-        console.log(
-          `[WebhookHandler] Processing jobId=${jobId} → userId=${userId}, transcriptionId=${transcriptionIdToUse}`
-        );
         await useCase.execute(jobId, transcriptionIdToUse, userId, transcript);
       } catch (err) {
         console.error("WebhookHandler background error:", err);
