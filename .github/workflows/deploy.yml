@@ -40,6 +40,11 @@ jobs:
         env:
           NUXT_SKIP_OXC: true
 
+      - name: Run Tests (API)
+        run: pnpm --filter api run test
+        env:
+          NUXT_SKIP_OXC: true
+
       - name: Prepare Nuxt types (client)
         run: pnpm --filter client nuxi prepare
         env:
