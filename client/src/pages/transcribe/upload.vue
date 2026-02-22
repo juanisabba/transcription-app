@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+  <div class="min-h-[calc(100vh-4.5rem)] bg-gradient-to-br from-blue-50 to-indigo-100">
     <div class="max-w-4xl mx-auto px-4 py-8">
       <!-- Header -->
       <div class="mb-8">
@@ -96,10 +96,26 @@
             </div>
           </div>
 
+          <!-- Nombre para guardar -->
+          <div v-if="selectedFile">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Nombre de la transcripción
+            </label>
+            <input
+              v-model="transcriptionName"
+              type="text"
+              placeholder="Ej: Reunión del equipo"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+            />
+            <p v-if="errors.name" class="text-red-500 text-sm mt-2">
+              {{ errors.name }}
+            </p>
+          </div>
+
           <!-- Upload Button -->
           <button
             type="button"
-            :disabled="!selectedFile || uiStore.isLoading"
+            :disabled="!selectedFile || !transcriptionName?.trim() || uiStore.isLoading"
             class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             @click="handleUpload"
           >
@@ -107,60 +123,22 @@
           </button>
         </div>
       </div>
-
-      <!-- Recent Transcriptions -->
-      <div class="bg-white rounded-lg shadow-lg p-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">
-          Transcripciones Recientes
-        </h2>
-
-        <div
-          v-if="transcriptionStore.transcriptions.length === 0"
-          class="text-center py-8"
-        >
-          <p class="text-gray-600">No hay transcripciones aún</p>
-        </div>
-
-        <div v-else class="space-y-3">
-          <div
-            v-for="transcription in transcriptionStore.transcriptions.slice(0, 5)"
-            :key="transcription.id"
-            class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
-          >
-            <div>
-              <p class="font-medium text-gray-900">{{ transcription.fileName }}</p>
-              <p class="text-sm text-gray-600">
-                {{ formatDate(transcription.createdAt) }}
-              </p>
-            </div>
-            <span
-              class="px-3 py-1 rounded-full text-sm font-medium"
-              :class="{
-                'bg-yellow-100 text-yellow-800': transcription.status === 'pending',
-                'bg-blue-100 text-blue-800': transcription.status === 'processing',
-                'bg-green-100 text-green-800': transcription.status === 'completed',
-                'bg-red-100 text-red-800': transcription.status === 'failed',
-              }"
-            >
-              {{ transcription.status }}
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-const { uploadWithConfirmation, list } = useTranscription();
-const transcriptionStore = useTranscriptionStore();
+const { uploadWithConfirmation } = useTranscription();
 const uiStore = useUiStore();
 
 const selectedFile = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+const transcriptionName = ref('');
+const audioDurationSeconds = ref<number | null>(null);
 
 const errors = reactive({
   file: '',
+  name: '',
 });
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
@@ -171,14 +149,6 @@ const formatFileSize = (bytes: number): string => {
   const sizes = ['Bytes', 'KB', 'MB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-};
-
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
 };
 
 const validateFile = (file: File): boolean => {
@@ -197,38 +167,72 @@ const validateFile = (file: File): boolean => {
   return true;
 };
 
-const handleFileSelect = (event: Event) => {
+const loadAudioDuration = (file: File): Promise<number> => {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = new Audio(url);
+    audio.onloadedmetadata = () => {
+      const duration = Math.floor(audio.duration);
+      URL.revokeObjectURL(url);
+      resolve(duration);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(0);
+    };
+  });
+};
+
+const handleFileSelect = async (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
   if (file && validateFile(file)) {
     selectedFile.value = file;
+    transcriptionName.value = file.name;
+    audioDurationSeconds.value = null;
+    audioDurationSeconds.value = await loadAudioDuration(file);
   }
 };
 
-const handleDrop = (event: DragEvent) => {
+const handleDrop = async (event: DragEvent) => {
   event.preventDefault();
   const file = event.dataTransfer?.files[0];
   if (file && validateFile(file)) {
     selectedFile.value = file;
+    transcriptionName.value = file.name;
+    audioDurationSeconds.value = null;
+    audioDurationSeconds.value = await loadAudioDuration(file);
   }
 };
+
+watch(selectedFile, (file) => {
+  if (file) {
+    transcriptionName.value = file.name;
+  } else {
+    transcriptionName.value = '';
+    audioDurationSeconds.value = null;
+  }
+});
 
 const handleUpload = async () => {
   if (!selectedFile.value) return;
 
+  errors.name = '';
+  const name = transcriptionName.value?.trim();
+  if (!name) {
+    errors.name = 'Indica un nombre para la transcripción';
+    return;
+  }
+
   try {
-    await uploadWithConfirmation(selectedFile.value);
+    await uploadWithConfirmation(selectedFile.value, name, audioDurationSeconds.value ?? undefined);
     selectedFile.value = null;
+    transcriptionName.value = '';
     if (fileInput.value) {
       fileInput.value.value = '';
     }
-    await list(1);
   } catch {
     // Error ya manejado en el composable (uiStore.setError)
   }
 };
-
-onMounted(async () => {
-  await list(1);
-});
 </script>

@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Evitar scroll horizontal innecesario */
+html,
+body,
+#__nuxt {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
