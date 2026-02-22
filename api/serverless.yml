@@ -6,13 +6,13 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: ${env:AWS_REGION, 'eu-north-1'}
-  stage: ${env:STAGE, 'dev'}
+  stage: ${opt:stage, 'dev'}
   apiGateway:
     shouldStartNameWithService: true
     binaryMediaTypes:
       - "multipart/form-data"
   memorySize: 512
-  timeout: 30
+  timeout: 28
 
   iam:
     role:
