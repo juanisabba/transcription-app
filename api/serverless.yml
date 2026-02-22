@@ -5,7 +5,7 @@ frameworkVersion: "4"
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ${env:AWS_REGION, 'eu-west-1'}
+  region: ${env:AWS_REGION, 'eu-north-1'}
   stage: ${env:STAGE, 'dev'}
   apiGateway:
     shouldStartNameWithService: true
@@ -96,10 +96,6 @@ functions:
           path: auth/logout
           method: post
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   # ===== TRANSCRIPTION ENDPOINTS =====
 
@@ -110,10 +106,6 @@ functions:
           path: transcriptions/upload
           method: post
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   realtimeSession:
     handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
@@ -122,10 +114,6 @@ functions:
           path: transcriptions/realtime
           method: post
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   realtimeToken:
     handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
@@ -134,10 +122,6 @@ functions:
           path: transcriptions/realtime/token
           method: post
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   saveRealtimeTranscription:
     handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
@@ -146,10 +130,6 @@ functions:
           path: transcriptions/realtime/{id}/save
           method: post
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   listTranscriptions:
     handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
@@ -158,10 +138,6 @@ functions:
           path: transcriptions
           method: get
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   statsTranscriptions:
     handler: dist/src/presentation/http/transcription/StatsHandler.handler
@@ -170,10 +146,6 @@ functions:
           path: transcriptions/stats
           method: get
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   downloadTranscription:
     handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
@@ -182,10 +154,6 @@ functions:
           path: transcriptions/{id}/download
           method: get
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   deleteTranscription:
     handler: dist/src/presentation/http/transcription/DeleteHandler.handler
@@ -194,10 +162,6 @@ functions:
           path: transcriptions/{id}
           method: delete
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   confirmUpload:
     handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
@@ -206,10 +170,6 @@ functions:
           path: transcriptions/{id}/confirm
           method: post
           cors: true
-          authorizer:
-            type: COGNITO_USER_POOLS
-            providerARNs:
-              - !GetAtt CognitoUserPool.Arn
 
   # ===== S3 EVENT TRIGGERS =====
 
@@ -315,8 +275,7 @@ resources:
                 - HEAD
               AllowedOrigins:
                 - "http://localhost:3000"
-                # Añadir aquí el origen de producción cuando lo tengas
-                # - 'https://tu-dominio.com'
+                - "http://localhost:3001"
               ExposedHeaders:
                 - ETag
         PublicAccessBlockConfiguration:
@@ -380,4 +339,3 @@ custom:
     httpPort: 3001
     host: "0.0.0.0"
     noPrependStageInUrl: true
-    # Para desarrollo local sin Cognito: serverless offline --noAuth
