@@ -76,3 +76,4 @@ scripts/temp/
 # --- Otros binarios ---
 *.zip
 *.rar
+.serverless/
