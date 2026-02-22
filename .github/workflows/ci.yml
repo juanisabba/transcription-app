@@ -45,7 +45,7 @@ jobs:
         working-directory: api
 
       - name: Nuxt Prepare
-        run: pnpm -C client nuxi prepare
+        run: pnpm --filter client exec nuxi prepare
 
       - name: Type check
         run: pnpm type-check
@@ -92,7 +92,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Nuxt Prepare
-        run: pnpm -C client nuxi prepare
+        run: pnpm --filter client exec nuxi prepare
 
       - name: Run API unit tests with coverage
         run: pnpm --filter api run test:coverage -- --testPathIgnorePatterns="integration"
@@ -154,7 +154,7 @@ jobs:
         working-directory: api
 
       - name: Nuxt Prepare
-        run: pnpm -C client nuxi prepare
+        run: pnpm --filter client exec nuxi prepare
 
       - name: Wait for DynamoDB Local
         run: npx wait-on tcp:localhost:8000 --timeout 30000
@@ -210,7 +210,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Nuxt Prepare
-        run: pnpm -C client nuxi prepare
+        run: pnpm --filter client exec nuxi prepare
 
       - name: Build
         run: pnpm build
@@ -248,7 +248,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Nuxt Prepare
-        run: pnpm -C client nuxi prepare
+        run: pnpm --filter client exec nuxi prepare
 
       - name: Build client
         run: pnpm --filter client run build
