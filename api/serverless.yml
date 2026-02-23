@@ -204,20 +204,18 @@ functions:
           path: webhook/speechmatics
           method: post
 
-package:
-  individually: true
-  patterns:
-    - "!**"
-    - "src/**"
+# package:
+#   individually: true
+#   patterns:
+#     - "!**"
+#     - "src/**"
 
 build:
   esbuild:
     bundle: true
-    packages: external
     minify: false
     platform: node
     target: node18
-    external: []
 
 plugins:
   - serverless-offline
