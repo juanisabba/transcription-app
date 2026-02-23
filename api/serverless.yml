@@ -347,6 +347,12 @@ custom:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
       - AWS_REGION
+      # Variables dependientes del stage - evitan sobrescribir provider.environment
+      - STAGE
+      - DYNAMODB_USERS_TABLE
+      - DYNAMODB_TRANSCRIPTIONS_TABLE
+      - DYNAMODB_JOB_MAPPING_TABLE
+      - S3_BUCKET_NAME
   dynamodb:
     stages:
       - local
