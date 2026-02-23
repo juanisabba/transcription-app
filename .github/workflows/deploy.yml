@@ -67,6 +67,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
           SPEECHMATICS_API_KEY: ${{ secrets.SPEECHMATICS_API_KEY }}
-          SPEECHMATICS_WEBHOOK_URL: ${{ secrets.SPEECHMATICS_WEBHOOK_URL }}
+          # SPEECHMATICS_WEBHOOK_URL: en prod se construye automáticamente desde API Gateway
           AWS_REGION: eu-north-1
           NUXT_SKIP_OXC: true

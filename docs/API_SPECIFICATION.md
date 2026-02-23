@@ -55,9 +55,15 @@ GET /transcriptions/{id}/download
 Response: { downloadUrl } o contenido textual directo
 Status: 200
 
+## Webhook Speechmatics
+
+`POST /webhook/speechmatics` — Recibe las notificaciones cuando Speechmatics termina una transcripción.
+
+**URL en producción:** Se construye automáticamente en cada deploy (API Gateway). No requiere configurar `SPEECHMATICS_WEBHOOK_URL` manualmente. Para desarrollo local, usar ngrok apuntando a este path.
+
 ## Webhook Security
 
-El webhook de Speechmatics (`POST /webhook/speechmatics`) soporta validación HMAC para garantizar la autenticidad de las peticiones.
+El webhook de Speechmatics soporta validación HMAC para garantizar la autenticidad de las peticiones.
 
 **Configuración:**
 - Variable de entorno: `SPEECHMATICS_WEBHOOK_SECRET`

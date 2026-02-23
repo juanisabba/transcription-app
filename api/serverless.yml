@@ -50,12 +50,14 @@ provider:
 
   environment:
     STAGE: ${self:provider.stage}
+    AWS_REQUEST_CHECKSUM_CALCULATION: "when_required"
     DYNAMODB_USERS_TABLE: vocali-users-${self:provider.stage}
     DYNAMODB_TRANSCRIPTIONS_TABLE: vocali-transcriptions-${self:provider.stage}
     DYNAMODB_JOB_MAPPING_TABLE: vocali-job-mapping-${self:provider.stage}
     S3_BUCKET_NAME: vocali-transcriptions-${self:provider.stage}
     SPEECHMATICS_API_KEY: ${env:SPEECHMATICS_API_KEY, ''}
-    SPEECHMATICS_WEBHOOK_URL: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
+    # En prod: SIEMPRE URL desde API Gateway (ignora env). En dev/local: usar SPEECHMATICS_WEBHOOK_URL (ngrok).
+    SPEECHMATICS_WEBHOOK_URL: ${self:custom.speechmaticsWebhookUrlByStage.${self:provider.stage}}
     SPEECHMATICS_WEBHOOK_SECRET: ${env:SPEECHMATICS_WEBHOOK_SECRET, ''}
     SPEECHMATICS_BASE_URL: ${env:SPEECHMATICS_BASE_URL, 'https://eu1.asr.api.speechmatics.com/v2'}
     SPEECHMATICS_MANAGEMENT_URL: ${env:SPEECHMATICS_MANAGEMENT_URL, 'https://mp.speechmatics.com/v1'}
@@ -305,8 +307,11 @@ resources:
                 - "http://localhost:3000"
                 - "http://localhost:3001"
                 - "https://transcription-app-client.vercel.app"
+                - "*"
               ExposedHeaders:
                 - ETag
+                - x-amz-checksum-crc32
+                - x-amz-request-id
         PublicAccessBlockConfiguration:
           BlockPublicAcls: true
           BlockPublicPolicy: true
@@ -418,6 +423,16 @@ resources:
       Value: !Ref CognitoUserPoolClient
 
 custom:
+  # URL del webhook para Speechmatics. En prod se construye desde API Gateway; en dev/local usar SPEECHMATICS_WEBHOOK_URL (ngrok).
+  speechmaticsWebhookUrlByStage:
+    prod:
+      Fn::Sub:
+        - "https://${ApiId}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/webhook/speechmatics"
+        - ApiId:
+            Ref: ApiGatewayRestApi
+          Stage: prod
+    dev: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
+    local: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
   cognitoUserPoolArn:
     prod: "arn:aws:cognito-idp:eu-north-1:273386478728:userpool/eu-north-1_b26FB6sIB"
     dev: !GetAtt CognitoUserPool.Arn
@@ -444,6 +459,7 @@ custom:
       - AWS_REGION
       # Variables dependientes del stage - evitan sobrescribir provider.environment
       - STAGE
+      - SPEECHMATICS_WEBHOOK_URL
       - DYNAMODB_USERS_TABLE
       - DYNAMODB_TRANSCRIPTIONS_TABLE
       - DYNAMODB_JOB_MAPPING_TABLE
