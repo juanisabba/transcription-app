@@ -36,7 +36,8 @@ const alias = {
 async function build() {
   const authFiles = globDir("src/presentation/http/auth");
   const transFiles = globDir("src/presentation/http/transcription");
-  const entryPoints = [...authFiles, ...transFiles];
+  const eventsFiles = globDir("src/presentation/events");
+  const entryPoints = [...authFiles, ...transFiles, ...eventsFiles];
 
   await esbuild.build({
     entryPoints,

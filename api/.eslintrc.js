@@ -41,7 +41,7 @@ module.exports = {
     eqeqeq: ["error", "always"],
     curly: ["error", "all"],
   },
-  ignorePatterns: ["dist/", "node_modules/", "*.js"],
+  ignorePatterns: ["dist/", "node_modules/", "*.js", "*.mjs"],
   overrides: [
     {
       files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
