@@ -61,7 +61,7 @@ provider:
     SPEECHMATICS_RT_WS_URL: ${env:SPEECHMATICS_RT_WS_URL, 'wss://eu2.rt.speechmatics.com/v2/'}
     COGNITO_USER_POOL_ID: !Ref CognitoUserPool
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
-    COGNITO_AUTO_CONFIRM: ${env:COGNITO_AUTO_CONFIRM, 'false'}
+    COGNITO_AUTO_CONFIRM: ${self:custom.cognitoAutoConfirmByStage.${self:provider.stage}, 'false'}
 
 functions:
   # ===== HELLO (Test Endpoint) =====
@@ -369,6 +369,11 @@ resources:
       Value: !Ref CognitoUserPoolClient
 
 custom:
+  # COGNITO_AUTO_CONFIRM por stage (prod: verificación email; dev: auto-confirm)
+  cognitoAutoConfirmByStage:
+    prod: 'false'
+    dev: 'true'
+    local: 'true'
   dotenv:
     exclude:
       - AWS_ACCESS_KEY_ID
@@ -380,6 +385,9 @@ custom:
       - DYNAMODB_TRANSCRIPTIONS_TABLE
       - DYNAMODB_JOB_MAPPING_TABLE
       - S3_BUCKET_NAME
+      - COGNITO_AUTO_CONFIRM
+      - COGNITO_USER_POOL_ID
+      - COGNITO_CLIENT_ID
   dynamodb:
     stages:
       - local

@@ -7,9 +7,19 @@ import type { IUserRepository } from "../../domain/repositories/IUserRepository"
  * DynamoDB implementation of IUserRepository.
  */
 export class UserRepository implements IUserRepository {
-  private readonly tableName = process.env.DYNAMODB_USERS_TABLE || "vocali-users-dev";
+  private readonly tableName: string;
 
-  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
+  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {
+    const tableName = process.env.DYNAMODB_USERS_TABLE || "vocali-users-dev";
+    const stage = process.env.STAGE || "dev";
+    if (stage === "prod" && tableName.includes("-dev")) {
+      throw new Error(
+        `[UserRepository] Configuración inválida: STAGE=prod pero DYNAMODB_USERS_TABLE=${tableName}. ` +
+          "En producción debe usar vocali-users-prod. Despliega con --stage prod desde CI/CD."
+      );
+    }
+    this.tableName = tableName;
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     try {
