@@ -304,6 +304,7 @@ resources:
               AllowedOrigins:
                 - "http://localhost:3000"
                 - "http://localhost:3001"
+                - "https://transcription-app-client.vercel.app"
               ExposedHeaders:
                 - ETag
         PublicAccessBlockConfiguration:
@@ -312,14 +313,26 @@ resources:
           IgnorePublicAcls: true
           RestrictPublicBuckets: true
 
+    CognitoPreSignUpPermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: !Ref CognitoPreSignUpLambdaFunction
+        Action: lambda:InvokeFunction
+        Principal: cognito-idp.amazonaws.com
+        SourceArn: !GetAtt CognitoUserPool.Arn
+      DependsOn: CognitoUserPool
+
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
+      DependsOn: CognitoPreSignUpLambdaFunction
       Properties:
         UserPoolName: vocali-users-${self:provider.stage}
         UsernameAttributes:
           - email
         AutoVerifiedAttributes:
           - email
+        LambdaConfig:
+          PreSignUp: !GetAtt CognitoPreSignUpLambdaFunction.Arn
         Policies:
           PasswordPolicy:
             MinimumLength: 8
