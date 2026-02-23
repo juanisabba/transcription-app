@@ -8,11 +8,7 @@ import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-
 import { AppError, ValidationError, UnauthorizedError } from "../../../shared/errors";
 import { isValidFileSize } from "../../../shared/utils/validation";
 import { FileTooLargeException, InvalidFileTypeException } from "../../../domain/exceptions";
-
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-};
+import { apiResponse } from "../helpers/responseHelper";
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
 const useCase = new UploadTranscriptionUseCase(transcriptionRepository, storageService);
@@ -30,14 +26,10 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
   try {
     const token = getBearerToken(event);
     if (!token) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({
-          code: "UNAUTHORIZED",
-          message: "Falta el header de autorización",
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, {
+        code: "UNAUTHORIZED",
+        message: "Falta el header de autorización",
+      }, { event });
     }
 
     const claims = await authService.validateToken(token);
@@ -46,19 +38,15 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
     const body = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
     const fileSize = typeof body.fileSize === "number" ? body.fileSize : 0;
     if (!isValidFileSize(fileSize)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          code: "VALIDATION_ERROR",
-      message:
-        fileSize < 0
-          ? "fileSize no puede ser negativo"
-          : fileSize > 20_971_520
-            ? "fileSize excede el límite de 20 MB"
-            : "fileSize debe ser un número válido",
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(400, {
+        code: "VALIDATION_ERROR",
+        message:
+          fileSize < 0
+            ? "fileSize no puede ser negativo"
+            : fileSize > 20_971_520
+              ? "fileSize excede el límite de 20 MB"
+              : "fileSize debe ser un número válido",
+      }, { event });
     }
 
     const request: UploadTranscriptionDTO = {
@@ -69,16 +57,12 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     const result = await useCase.execute(userId, request);
 
-    return {
-      statusCode: 202,
-      body: JSON.stringify({
-        id: result.transcriptionId,
-        uploadUrl: result.uploadUrl,
-        status: "pending",
-        expiresIn: result.expiresIn,
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(202, {
+      id: result.transcriptionId,
+      uploadUrl: result.uploadUrl,
+      status: "pending",
+      expiresIn: result.expiresIn,
+    }, { event });
   } catch (error) {
     console.error("UploadHandler error:", error);
 
@@ -86,58 +70,28 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       error instanceof InvalidFileTypeException ||
       (error instanceof Error && error.name === "InvalidFileTypeException")
     ) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          code: "INVALID_FILE_TYPE",
-          message: error.message,
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(400, { code: "INVALID_FILE_TYPE", message: error.message }, { event });
     }
 
     if (error instanceof UnauthorizedError) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, { code: error.code, message: error.message }, { event });
     }
 
     if (error instanceof FileTooLargeException) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          code: "FILE_TOO_LARGE",
-          message: error.message,
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(400, { code: "FILE_TOO_LARGE", message: error.message }, { event });
     }
 
     if (error instanceof AppError) {
-      return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(error.statusCode, { code: error.code, message: error.message }, { event });
     }
 
     if (error instanceof ValidationError) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(400, { code: error.code, message: error.message }, { event });
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Error interno del servidor",
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(500, {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Error interno del servidor",
+    }, { event });
   }
 };

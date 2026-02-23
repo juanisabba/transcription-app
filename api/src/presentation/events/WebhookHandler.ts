@@ -4,6 +4,7 @@ import { ProcessTranscriptionResultUseCase } from "../../application/use-cases/t
 import { transcriptionRepository } from "../../infrastructure/repositories/transcriptionRepositoryInstance";
 import { jobMappingRepository } from "../../infrastructure/repositories/jobMappingRepositoryInstance";
 import { speechMaticsAdapter } from "../../infrastructure/adapters/external-services/speechMaticsAdapterInstance";
+import { apiResponse } from "../http/helpers/responseHelper";
 
 function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
   const expected = createHmac("sha256", secret)
@@ -43,11 +44,8 @@ function extractTranscriptFromResults(
   return results.map((r) => r.alternatives?.[0]?.content ?? "").join(" ");
 }
 
-const jsonResponse = (status: number, body: object): APIGatewayProxyResult => ({
-  statusCode: status,
-  body: JSON.stringify(body),
-  headers: { "Content-Type": "application/json" },
-});
+const jsonResponse = (status: number, body: object): APIGatewayProxyResult =>
+  apiResponse(status, body);
 
 export const handler: APIGatewayProxyHandler = async (
   event

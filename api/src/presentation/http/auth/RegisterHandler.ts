@@ -1,10 +1,6 @@
 import type { APIGatewayProxyHandler, APIGatewayProxyResult } from "aws-lambda";
 import { AppError } from "../../../shared/errors";
-
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-};
+import { apiResponse } from "../helpers/responseHelper";
 
 export const handler: APIGatewayProxyHandler = async (
   event,
@@ -48,40 +44,24 @@ export const handler: APIGatewayProxyHandler = async (
       password,
     });
 
-    return {
-      statusCode: 201,
-      body: JSON.stringify(result),
-      headers: corsHeaders,
-    };
+    return apiResponse(201, result, { event });
   } catch (error) {
     console.error("RegisterHandler error:", error);
 
     if (error instanceof AppError) {
-      return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(error.statusCode, { code: error.code, message: error.message });
     }
 
     if (error instanceof Error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error.message,
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(500, {
+        code: "INTERNAL_SERVER_ERROR",
+        message: error.message,
+      }, { event });
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Error desconocido",
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(500, {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Error desconocido",
+    }, { event });
   }
 };

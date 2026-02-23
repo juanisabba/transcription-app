@@ -4,11 +4,7 @@ import { transcriptionRepository } from "../../../infrastructure/repositories/tr
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, UnauthorizedError } from "../../../shared/errors";
-
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-};
+import { apiResponse } from "../helpers/responseHelper";
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
 const useCase = new ListTranscriptionsUseCase(transcriptionRepository);
@@ -26,14 +22,10 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
   try {
     const token = getBearerToken(event);
     if (!token) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({
-          code: "UNAUTHORIZED",
-          message: "Falta el header de autorización",
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, {
+        code: "UNAUTHORIZED",
+        message: "Falta el header de autorización",
+      }, { event });
     }
 
     const claims = await authService.validateToken(token);
@@ -46,25 +38,21 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     const result = await useCase.execute(userId, page, pageSize);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        items: result.items.map((t) => ({
-          id: t.id,
-          fileName: t.fileName,
-          status: t.status,
-          type: t.type,
-          duration: t.duration,
-          createdAt: t.createdAt.toISOString(),
-          updatedAt: t.updatedAt.toISOString(),
-          content: t.status === "completed" ? t.content : undefined,
-        })),
-        hasMore: result.hasMore,
-        totalPages: result.totalPages,
-        currentPage: result.currentPage,
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(200, {
+      items: result.items.map((t) => ({
+        id: t.id,
+        fileName: t.fileName,
+        status: t.status,
+        type: t.type,
+        duration: t.duration,
+        createdAt: t.createdAt.toISOString(),
+        updatedAt: t.updatedAt.toISOString(),
+        content: t.status === "completed" ? t.content : undefined,
+      })),
+      hasMore: result.hasMore,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+    }, { event });
   } catch (error) {
     console.error("ListTranscriptionsHandler error:", error);
 
@@ -72,28 +60,16 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       error instanceof UnauthorizedError ||
       (error instanceof Error && error.message.includes("expired"))
     ) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Invalid or expired token" }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, { code: "UNAUTHORIZED", message: "Invalid or expired token" }, { event });
     }
 
     if (error instanceof AppError) {
-      return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(error.statusCode, { code: error.code, message: error.message }, { event });
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Error interno del servidor",
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(500, {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Error interno del servidor",
+    }, { event });
   }
 };

@@ -8,11 +8,7 @@ import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, UnauthorizedError } from "../../../shared/errors";
 import { isValidUuidV4 } from "../../../shared/utils/validation";
-
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-};
+import { apiResponse } from "../helpers/responseHelper";
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
 const useCase = new StartTranscriptionUseCase(
@@ -35,14 +31,10 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
   try {
     const token = getBearerToken(event);
     if (!token) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({
-          code: "UNAUTHORIZED",
-          message: "Falta el header de autorización",
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, {
+        code: "UNAUTHORIZED",
+        message: "Falta el header de autorización",
+      }, { event });
     }
 
     const claims = await authService.validateToken(token);
@@ -50,24 +42,16 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     const transcriptionId = event.pathParameters?.id;
     if (!transcriptionId || transcriptionId.trim() === "") {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          code: "VALIDATION_ERROR",
-          message: "Falta el id de transcripción en la ruta",
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(400, {
+        code: "VALIDATION_ERROR",
+        message: "Falta el id de transcripción en la ruta",
+      }, { event });
     }
     if (!isValidUuidV4(transcriptionId)) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          code: "VALIDATION_ERROR",
-          message: "transcriptionId tiene formato inválido",
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(400, {
+        code: "VALIDATION_ERROR",
+        message: "transcriptionId tiene formato inválido",
+      }, { event });
     }
 
     let duration: number | undefined;
@@ -82,26 +66,15 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     const transcription = await transcriptionRepository.findById(transcriptionId, userId);
     if (!transcription) {
-      return {
-        statusCode: 404,
-        body: JSON.stringify({
-          code: "NOT_FOUND",
-          message: `Transcripción ${transcriptionId} no encontrada`,
-        }),
-        headers: corsHeaders,
-      };
+      return apiResponse(404, {
+        code: "NOT_FOUND",
+        message: `Transcripción ${transcriptionId} no encontrada`,
+      }, { event });
     }
 
     await useCase.execute(userId, transcriptionId, transcription.s3Path, "en", duration);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        id: transcriptionId,
-        status: "processing",
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(200, { id: transcriptionId, status: "processing" }, { event });
   } catch (error) {
     console.error("ConfirmUploadHandler error:", error);
 
@@ -109,28 +82,16 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       error instanceof UnauthorizedError ||
       (error instanceof Error && error.message.includes("expired"))
     ) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Token inválido o expirado" }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, { code: "UNAUTHORIZED", message: "Token inválido o expirado" }, { event });
     }
 
     if (error instanceof AppError) {
-      return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(error.statusCode, { code: error.code, message: error.message }, { event });
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Error interno del servidor",
-      }),
-      headers: corsHeaders,
-    };
+    return apiResponse(500, {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Error interno del servidor",
+    }, { event });
   }
 };

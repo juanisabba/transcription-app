@@ -1,15 +1,8 @@
 import type { APIGatewayProxyHandler, APIGatewayProxyResult } from "aws-lambda";
+import { apiResponse } from "../helpers/responseHelper";
 
-export const handler: APIGatewayProxyHandler = (): Promise<APIGatewayProxyResult> => {
-  return Promise.resolve({
-    statusCode: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-    body: JSON.stringify({
-      message: "Hello from Vocali API!",
-      status: "success",
-    }),
-  });
+export const handler: APIGatewayProxyHandler = (event): Promise<APIGatewayProxyResult> => {
+  return Promise.resolve(
+    apiResponse(200, { message: "Hello from Vocali API!", status: "success" }, { event })
+  );
 };

@@ -3,11 +3,7 @@ import { LogoutUserUC } from "../../../application/use-cases/auth/LogoutUserUC";
 import { AppError, UnauthorizedError } from "../../../shared/errors";
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
-
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-};
+import { apiResponse } from "../helpers/responseHelper";
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
 const useCase = new LogoutUserUC(authService);
@@ -25,11 +21,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
   try {
     const token = getBearerToken(event);
     if (!token) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ code: "UNAUTHORIZED", message: "Falta el header de autorización" }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, { code: "UNAUTHORIZED", message: "Falta el header de autorización" }, { event });
     }
 
     const claims = await authService.validateToken(token);
@@ -37,34 +29,21 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     await useCase.execute(userId);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Cierre de sesión exitoso" }),
-      headers: corsHeaders,
-    };
+    return apiResponse(200, { message: "Cierre de sesión exitoso" }, { event });
   } catch (error) {
     console.error("LogoutHandler error:", error);
 
     if (error instanceof AppError) {
-      return {
-        statusCode: error.statusCode,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(error.statusCode, { code: error.code, message: error.message }, { event });
     }
 
     if (error instanceof UnauthorizedError) {
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ code: error.code, message: error.message }),
-        headers: corsHeaders,
-      };
+      return apiResponse(401, { code: error.code, message: error.message }, { event });
     }
 
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" }),
-      headers: corsHeaders,
-    };
+    return apiResponse(500, {
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Error interno del servidor",
+    }, { event });
   }
 };
