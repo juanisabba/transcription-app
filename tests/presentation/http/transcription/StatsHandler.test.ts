@@ -44,7 +44,7 @@ describe("StatsHandler", () => {
       multiValueHeaders: {},
       httpMethod: "GET",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions/stats",
+      path: "/transcriptions/stats",
       pathParameters: null,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

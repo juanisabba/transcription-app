@@ -23,7 +23,7 @@ describe("LogoutHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/auth/logout",
+      path: "/auth/logout",
       pathParameters: null,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

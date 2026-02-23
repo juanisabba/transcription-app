@@ -61,7 +61,7 @@ describe("ListTranscriptionsHandler", () => {
       multiValueHeaders: {},
       httpMethod: "GET",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions",
+      path: "/transcriptions",
       pathParameters: null,
       queryStringParameters: queryParams,
       multiValueQueryStringParameters: null,

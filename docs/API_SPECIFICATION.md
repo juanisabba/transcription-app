@@ -1,46 +1,44 @@
 # API Endpoints
 
-Todas las rutas tienen el prefijo `/api/v1`.
-
 ## Auth
 
-POST /api/v1/auth/register
+POST /auth/register
 Request: { email, password }
 Response: { userId, accessToken, refreshToken }
 Status: 201
 
-POST /api/v1/auth/login
+POST /auth/login
 Request: { email, password }
 Response: { userId, accessToken, refreshToken }
 Status: 200
 
 ## Transcription
 
-POST /api/v1/transcriptions/upload
+POST /transcriptions/upload
 Request: { fileName, fileSize, contentType? }
 Response: { id, uploadUrl, status: "pending", expiresIn }
 Status: 202
 
-POST /api/v1/transcriptions/realtime
+POST /transcriptions/realtime
 Request: (vacío, requiere Bearer token)
 Response: { token, wsUrl, ttl, transcriptionId }
 Status: 200
 
-POST /api/v1/transcriptions/realtime/{id}/save
+POST /transcriptions/realtime/{id}/save
 Request: { content: string }
 Response: { ok: true }
 Status: 200
 Nota: El cliente debe llamar este endpoint al terminar la sesión WebSocket con el texto transcrito.
 
-DELETE /api/v1/transcriptions/{id}
+DELETE /transcriptions/{id}
 Response: (vacío)
 Status: 204
 
-GET /api/v1/transcriptions?page=1&pageSize=10
+GET /transcriptions?page=1&pageSize=10
 Response: { items: [Transcription], hasMore, totalPages, currentPage }
 Status: 200
 
-### Paginación (GET /api/v1/transcriptions)
+### Paginación (GET /transcriptions)
 
 | Parámetro | Tipo | Default | Descripción |
 |----------|------|---------|-------------|
@@ -53,13 +51,13 @@ Status: 200
 - `totalPages`: Número total de páginas conocidas.
 - `currentPage`: Página actual devuelta.
 
-GET /api/v1/transcriptions/{id}/download
+GET /transcriptions/{id}/download
 Response: { downloadUrl } o contenido textual directo
 Status: 200
 
 ## Webhook Security
 
-El webhook de Speechmatics (`POST /api/v1/webhook/speechmatics`) soporta validación HMAC para garantizar la autenticidad de las peticiones.
+El webhook de Speechmatics (`POST /webhook/speechmatics`) soporta validación HMAC para garantizar la autenticidad de las peticiones.
 
 **Configuración:**
 - Variable de entorno: `SPEECHMATICS_WEBHOOK_SECRET`

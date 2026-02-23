@@ -52,7 +52,7 @@ describe("RealtimeSessionHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions/realtime",
+      path: "/transcriptions/realtime",
       pathParameters: null,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

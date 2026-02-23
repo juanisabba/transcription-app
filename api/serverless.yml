@@ -69,7 +69,7 @@ functions:
     handler: dist/api/src/presentation/http/transcription/HelloHandler.handler
     events:
       - http:
-          path: api/v1/hello
+          path: hello
           method: get
           cors: true
 
@@ -79,7 +79,7 @@ functions:
     handler: dist/src/presentation/http/auth/RegisterHandler.handler
     events:
       - http:
-          path: api/v1/auth/register
+          path: auth/register
           method: post
           cors: true
 
@@ -87,7 +87,7 @@ functions:
     handler: dist/src/presentation/http/auth/LoginHandler.handler
     events:
       - http:
-          path: api/v1/auth/login
+          path: auth/login
           method: post
           cors: true
 
@@ -95,7 +95,7 @@ functions:
     handler: dist/src/presentation/http/auth/LogoutHandler.handler
     events:
       - http:
-          path: api/v1/auth/logout
+          path: auth/logout
           method: post
           cors: true
           authorizer:
@@ -109,7 +109,7 @@ functions:
     handler: dist/src/presentation/http/transcription/UploadHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/upload
+          path: transcriptions/upload
           method: post
           cors: true
           authorizer:
@@ -121,7 +121,7 @@ functions:
     handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/realtime
+          path: transcriptions/realtime
           method: post
           cors: true
           authorizer:
@@ -133,7 +133,7 @@ functions:
     handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/realtime/token
+          path: transcriptions/realtime/token
           method: post
           cors: true
           authorizer:
@@ -145,7 +145,7 @@ functions:
     handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/realtime/{id}/save
+          path: transcriptions/realtime/{id}/save
           method: post
           cors: true
           authorizer:
@@ -157,7 +157,7 @@ functions:
     handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions
+          path: transcriptions
           method: get
           cors: true
           authorizer:
@@ -169,7 +169,7 @@ functions:
     handler: dist/src/presentation/http/transcription/StatsHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/stats
+          path: transcriptions/stats
           method: get
           cors: true
           authorizer:
@@ -181,7 +181,7 @@ functions:
     handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/{id}/download
+          path: transcriptions/{id}/download
           method: get
           cors: true
           authorizer:
@@ -193,7 +193,7 @@ functions:
     handler: dist/src/presentation/http/transcription/DeleteHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/{id}
+          path: transcriptions/{id}
           method: delete
           cors: true
           authorizer:
@@ -205,7 +205,7 @@ functions:
     handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
     events:
       - http:
-          path: api/v1/transcriptions/{id}/confirm
+          path: transcriptions/{id}/confirm
           method: post
           cors: true
           authorizer:
@@ -231,18 +231,11 @@ functions:
     handler: dist/src/presentation/events/WebhookHandler.handler
     events:
       - http:
-          path: api/v1/webhook/speechmatics
+          path: webhook/speechmatics
           method: post
 
-package:
-  individually: true
-  patterns:
-    - "dist/**"
-    - "node_modules/**"
-    - "!src/**"
-
 build:
-  esbuild: false
+  esbuild: true
 
 plugins:
   - serverless-offline

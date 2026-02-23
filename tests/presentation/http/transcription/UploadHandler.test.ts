@@ -44,7 +44,7 @@ describe("UploadHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions/upload",
+      path: "/transcriptions/upload",
       pathParameters: null,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

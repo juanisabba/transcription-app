@@ -77,7 +77,7 @@ describe("ConfirmUploadHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/confirm",
+      path: "/transcriptions/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/confirm",
       pathParameters: pathParams,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

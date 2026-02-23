@@ -62,7 +62,7 @@ describe("SaveRealtimeTranscriptionHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions/realtime/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/save",
+      path: "/transcriptions/realtime/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/save",
       pathParameters: pathParams,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

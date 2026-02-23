@@ -51,7 +51,7 @@ describe("WebhookHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/webhook/speechmatics",
+      path: "/webhook/speechmatics",
       pathParameters: null,
       queryStringParameters: queryParams,
       multiValueQueryStringParameters: null,

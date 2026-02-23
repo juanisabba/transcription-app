@@ -41,7 +41,7 @@ describe("RealtimeTokenHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/transcriptions/realtime/token",
+      path: "/transcriptions/realtime/token",
       pathParameters: null,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

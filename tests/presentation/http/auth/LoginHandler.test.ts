@@ -42,7 +42,7 @@ describe("LoginHandler", () => {
       multiValueHeaders: {},
       httpMethod: "POST",
       isBase64Encoded: false,
-      path: "/api/v1/auth/login",
+      path: "/auth/login",
       pathParameters: null,
       queryStringParameters: null,
       multiValueQueryStringParameters: null,

@@ -21,6 +21,6 @@ export default defineConfig({
     },
   },
   env: {
-    apiUrl: "http://localhost:3001/api/v1",
+    apiUrl: "http://localhost:3001",
   },
 });
