@@ -363,6 +363,17 @@ resources:
         AccessTokenValidity: 1
         RefreshTokenValidity: 30
 
+    MyCognitoAuthNew:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: MyCognitoAuthNew
+        Type: COGNITO_USER_POOLS
+        IdentitySource: method.request.header.Authorization
+        ProviderARNs:
+          - ${self:custom.cognitoUserPoolArn.${self:provider.stage}, self:custom.cognitoUserPoolArn.default}
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
     # CORS en respuestas 4XX/5XX del gateway (Lambda usa orígenes dinámicos; aquí * para compatibilidad localhost+Vercel)
     GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
@@ -418,9 +429,8 @@ custom:
     prod: "1l72utd99e53tbo8mhcn0kr5qp"
     default: !Ref CognitoUserPoolClient
   cognitoAuthorizer:
-    name: MyCognitoAuth
     type: COGNITO_USER_POOLS
-    arn: ${self:custom.cognitoUserPoolArn.${self:provider.stage}, self:custom.cognitoUserPoolArn.default}
+    authorizerId: !Ref MyCognitoAuthNew
     identitySource: method.request.header.Authorization
   # COGNITO_AUTO_CONFIRM por stage (prod: verificación email; dev: auto-confirm)
   cognitoAutoConfirmByStage:
