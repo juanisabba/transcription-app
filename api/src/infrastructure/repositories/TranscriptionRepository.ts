@@ -34,13 +34,13 @@ const CREATED_AT_INDEX = "createdAt-index";
 /**
  * DynamoDB implementation of ITranscriptionRepository.
  *
- * Persists transcriptions in vocali-transcriptions-{stage}.
+ * Persists transcriptions in vocali-transcriptions-v2-{stage}.
  * Primary Key: userId (HASH) + id (RANGE).
  * GSI createdAt-index: userId (HASH) + createdAt (RANGE) para ordenar de más nuevo a más viejo.
  */
 export class TranscriptionRepository implements ITranscriptionRepository {
   private readonly tableName =
-    process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-dev";
+    process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-v2-dev";
 
   constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
 

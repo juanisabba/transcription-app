@@ -168,7 +168,7 @@ jobs:
           AWS_ACCESS_KEY_ID: local
           AWS_SECRET_ACCESS_KEY: local
           DYNAMODB_USERS_TABLE: vocali-users-test
-          DYNAMODB_TRANSCRIPTIONS_TABLE: vocali-transcriptions-test
+          DYNAMODB_TRANSCRIPTIONS_TABLE: vocali-transcriptions-v2-test
           DYNAMODB_JOB_MAPPING_TABLE: vocali-job-mapping-test
           NUXT_SKIP_OXC: true
 

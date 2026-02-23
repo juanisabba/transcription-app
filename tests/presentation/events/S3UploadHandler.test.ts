@@ -43,7 +43,7 @@ describe("S3UploadHandler", () => {
         s3: {
           s3SchemaVersion: "1.0",
           configurationId: "test",
-          bucket: { name: "vocali-transcriptions-dev", arn: "arn:aws:s3:::bucket" },
+          bucket: { name: "vocali-transcriptions-v2-dev", arn: "arn:aws:s3:::bucket" },
           object: {
             key,
             size: 1024,
