@@ -1,9 +1,10 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { JobMappingRepository } from "../../../../src/infrastructure/repositories/JobMappingRepository";
+import { JobMappingRepository } from "./JobMappingRepository";
 
-const dynamodbClient = new DynamoDBClient({
-  region: process.env.AWS_REGION || "eu-west-1",
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION ?? "eu-north-1",
 });
-const docClient = DynamoDBDocumentClient.from(dynamodbClient);
+const docClient = DynamoDBDocumentClient.from(client);
+
 export const jobMappingRepository = new JobMappingRepository(docClient);

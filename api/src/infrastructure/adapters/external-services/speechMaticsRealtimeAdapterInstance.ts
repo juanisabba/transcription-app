@@ -1,3 +1,3 @@
-import { SpeechMaticsRealtimeAdapter } from "../../../../../src/infrastructure/adapters/external-services/SpeechMaticsRealtimeAdapter";
+import { SpeechMaticsRealtimeAdapter } from "./SpeechMaticsRealtimeAdapter";
 
 export const speechMaticsRealtimeAdapter = new SpeechMaticsRealtimeAdapter();

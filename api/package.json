@@ -9,7 +9,7 @@
     "dev:no-watch": "serverless offline start",
     "dynamo:up": "podman compose up -d dynamodb-local",
     "dynamo:down": "podman compose down",
-    "build": "rimraf dist && tsc && tsc-alias -p tsconfig.json",
+    "build": "rimraf dist && node build.mjs",
     "deploy": "pnpm run build && serverless deploy --stage prod",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -33,6 +33,7 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "@esbuild-plugins/tsconfig-paths": "^0.1.2",
     "@types/aws-lambda": "^8.10.130",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.0",

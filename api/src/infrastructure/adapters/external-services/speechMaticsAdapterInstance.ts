@@ -1,3 +1,3 @@
-import { SpeechMaticsAdapter } from "../../../../../src/infrastructure/adapters/external-services/SpeechMaticsAdapter";
+import { SpeechMaticsAdapter } from "./SpeechMaticsAdapter";
 
 export const speechMaticsAdapter = new SpeechMaticsAdapter();

@@ -3,125 +3,84 @@ import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/li
 import { User } from "../../domain/entities/User";
 import type { IUserRepository } from "../../domain/repositories/IUserRepository";
 
+const EMAIL_INDEX = "email-index";
+
+interface UserItem {
+  userId: string;
+  email: string;
+  passwordHash: string;
+  createdAt: number;
+  lastLoginAt?: number;
+}
+
 /**
  * DynamoDB implementation of IUserRepository.
+ * Persists users in vocali-users-{stage}.
  */
 export class UserRepository implements IUserRepository {
-  private readonly tableName: string;
+  private readonly tableName =
+    process.env.DYNAMODB_USERS_TABLE ?? "vocali-users-dev";
 
-  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {
-    const tableName = process.env.DYNAMODB_USERS_TABLE || "vocali-users-dev";
-    const stage = process.env.STAGE || "dev";
-    if (stage === "prod" && tableName.includes("-dev")) {
-      throw new Error(
-        `[UserRepository] Configuración inválida: STAGE=prod pero DYNAMODB_USERS_TABLE=${tableName}. ` +
-          "En producción debe usar vocali-users-prod. Despliega con --stage prod desde CI/CD."
-      );
-    }
-    this.tableName = tableName;
-  }
+  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    try {
-      const result = await this.dynamodbClient.send(
-        new QueryCommand({
-          TableName: this.tableName,
-          IndexName: "email-index",
-          KeyConditionExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": email,
-          },
-        })
-      );
+    const result = await this.dynamodbClient.send(
+      new QueryCommand({
+        TableName: this.tableName,
+        IndexName: EMAIL_INDEX,
+        KeyConditionExpression: "email = :email",
+        ExpressionAttributeValues: { ":email": email },
+      })
+    );
 
-      if (!result.Items || result.Items.length === 0) {
-        return null;
-      }
-
-      const item = result.Items[0] as Record<string, unknown>;
-      return this.mapToDomain(item);
-    } catch (error) {
-      console.error("[UserRepo] Error finding user by email:", error);
-      throw error;
-    }
+    const item = result.Items?.[0] as UserItem | undefined;
+    if (!item) return null;
+    return this.mapToDomain(item);
   }
 
   async findById(id: string): Promise<User | null> {
-    try {
-      const result = await this.dynamodbClient.send(
-        new GetCommand({
-          TableName: this.tableName,
-          Key: {
-            userId: id,
-          },
-        })
-      );
+    const result = await this.dynamodbClient.send(
+      new GetCommand({
+        TableName: this.tableName,
+        Key: { userId: id },
+      })
+    );
 
-      if (!result.Item) {
-        return null;
-      }
-
-      return this.mapToDomain(result.Item as Record<string, unknown>);
-    } catch (error) {
-      console.error("[UserRepo] Error finding user by ID:", error);
-      throw error;
-    }
+    if (!result.Item) return null;
+    return this.mapToDomain(result.Item as UserItem);
   }
 
   async save(user: User): Promise<void> {
-    console.log(`[UserRepo] Saving user: ${user.id}`);
-    try {
-      await this.dynamodbClient.send(
-        new PutCommand({
-          TableName: this.tableName,
-          Item: {
-            userId: user.id,
-            email: user.email,
-            passwordHash: user.passwordHash,
-            createdAt: user.createdAt.getTime(),
-            updatedAt: new Date().getTime(),
-          },
-          // Asegura que no sobreescribimos por userId
-          ConditionExpression: "attribute_not_exists(userId)",
-        })
-      );
-      console.log(`[UserRepo] User saved to DynamoDB: ${user.email}`);
-    } catch (error) {
-      const err = error as { name?: string };
-      if (err.name === "ConditionalCheckFailedException") {
-        throw new Error(`User with ID ${user.id} already exists`);
-      }
-      console.error("[UserRepo] Error saving user:", error);
-      throw error;
-    }
+    await this.dynamodbClient.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: {
+          userId: user.id,
+          email: user.email,
+          passwordHash: user.passwordHash,
+          createdAt: user.createdAt.getTime(),
+        },
+      })
+    );
   }
 
-  async updateLastLogin(id: string): Promise<void> {
-    try {
-      await this.dynamodbClient.send(
-        new UpdateCommand({
-          TableName: this.tableName,
-          Key: {
-            userId: id,
-          },
-          UpdateExpression: "SET lastLoginAt = :now, updatedAt = :now",
-          ExpressionAttributeValues: {
-            ":now": new Date().getTime(),
-          },
-        })
-      );
-    } catch (error) {
-      console.error("[UserRepo] Error updating last login:", error);
-      throw error;
-    }
+  async updateLastLogin(userId: string): Promise<void> {
+    await this.dynamodbClient.send(
+      new UpdateCommand({
+        TableName: this.tableName,
+        Key: { userId },
+        UpdateExpression: "SET lastLoginAt = :now",
+        ExpressionAttributeValues: { ":now": Date.now() },
+      })
+    );
   }
 
-  private mapToDomain(item: Record<string, unknown>): User {
+  private mapToDomain(item: UserItem): User {
     return new User(
-      (item.userId ?? item.id) as string,
-      item.email as string,
-      item.passwordHash as string,
-      new Date(item.createdAt as number)
+      item.userId,
+      item.email,
+      item.passwordHash,
+      new Date(item.createdAt)
     );
   }
 }

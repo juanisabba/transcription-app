@@ -66,7 +66,7 @@ provider:
 functions:
   # ===== HELLO (Test Endpoint) =====
   hello:
-    handler: src/presentation/http/transcription/HelloHandler.handler
+    handler: dist/presentation/http/transcription/HelloHandler.handler
     events:
       - http:
           path: hello
@@ -76,7 +76,7 @@ functions:
   # ===== AUTH ENDPOINTS =====
 
   register:
-    handler: src/presentation/http/auth/RegisterHandler.handler
+    handler: dist/presentation/http/auth/RegisterHandler.handler
     events:
       - http:
           path: auth/register
@@ -84,7 +84,7 @@ functions:
           cors: true
 
   login:
-    handler: src/presentation/http/auth/LoginHandler.handler
+    handler: dist/presentation/http/auth/LoginHandler.handler
     events:
       - http:
           path: auth/login
@@ -92,7 +92,7 @@ functions:
           cors: true
 
   logout:
-    handler: src/presentation/http/auth/LogoutHandler.handler
+    handler: dist/presentation/http/auth/LogoutHandler.handler
     events:
       - http:
           path: auth/logout
@@ -103,7 +103,7 @@ functions:
   # ===== TRANSCRIPTION ENDPOINTS =====
 
   uploadTranscription:
-    handler: src/presentation/http/transcription/UploadHandler.handler
+    handler: dist/presentation/http/transcription/UploadHandler.handler
     events:
       - http:
           path: transcriptions/upload
@@ -112,7 +112,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   realtimeSession:
-    handler: src/presentation/http/transcription/RealtimeSessionHandler.handler
+    handler: dist/presentation/http/transcription/RealtimeSessionHandler.handler
     events:
       - http:
           path: transcriptions/realtime
@@ -121,7 +121,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   realtimeToken:
-    handler: src/presentation/http/transcription/RealtimeTokenHandler.handler
+    handler: dist/presentation/http/transcription/RealtimeTokenHandler.handler
     events:
       - http:
           path: transcriptions/realtime/token
@@ -130,7 +130,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   saveRealtimeTranscription:
-    handler: src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
+    handler: dist/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
     events:
       - http:
           path: transcriptions/realtime/{id}/save
@@ -139,7 +139,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   listTranscriptions:
-    handler: src/presentation/http/transcription/ListTranscriptionsHandler.handler
+    handler: dist/presentation/http/transcription/ListTranscriptionsHandler.handler
     events:
       - http:
           path: transcriptions
@@ -148,7 +148,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   statsTranscriptions:
-    handler: src/presentation/http/transcription/StatsHandler.handler
+    handler: dist/presentation/http/transcription/StatsHandler.handler
     events:
       - http:
           path: transcriptions/stats
@@ -157,7 +157,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   downloadTranscription:
-    handler: src/presentation/http/transcription/DownloadTranscriptionHandler.handler
+    handler: dist/presentation/http/transcription/DownloadTranscriptionHandler.handler
     events:
       - http:
           path: transcriptions/{id}/download
@@ -166,7 +166,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   deleteTranscription:
-    handler: src/presentation/http/transcription/DeleteHandler.handler
+    handler: dist/presentation/http/transcription/DeleteHandler.handler
     events:
       - http:
           path: transcriptions/{id}
@@ -175,7 +175,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   confirmUpload:
-    handler: src/presentation/http/transcription/ConfirmUploadHandler.handler
+    handler: dist/presentation/http/transcription/ConfirmUploadHandler.handler
     events:
       - http:
           path: transcriptions/{id}/confirm
@@ -186,7 +186,7 @@ functions:
   # ===== S3 EVENT TRIGGERS =====
 
   processAudioUpload:
-    handler: src/presentation/events/S3UploadHandler.handler
+    handler: dist/presentation/events/S3UploadHandler.handler
     events:
       - s3:
           bucket: !Ref TranscriptionsBucket
@@ -198,26 +198,19 @@ functions:
   # ===== WEBHOOKS =====
 
   speechmaticsWebhook:
-    handler: src/presentation/events/WebhookHandler.handler
+    handler: dist/presentation/events/WebhookHandler.handler
     events:
       - http:
           path: webhook/speechmatics
           method: post
 
 package:
-  individually: false
-#   patterns:
-#     - "!**"
-#     - "src/**"
+  individually: true
+  patterns:
+    - "dist/**"
+    - "!src/**"
+    - "!node_modules/**"
 
-build:
-  esbuild:
-    bundle: true
-    minify: false
-    platform: node
-    target: node18
-    packages: external # Esto le dice: "No intentes construir un package.json nuevo"
-    external: [] # Asegura que meta todo en el bundle
 plugins:
   - serverless-offline
   - serverless-dynamodb-local
