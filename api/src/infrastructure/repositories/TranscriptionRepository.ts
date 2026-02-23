@@ -6,6 +6,9 @@ import {
   QueryCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { S3Client } from "@aws-sdk/client-s3";
 import {
   Transcription,
   type TranscriptionStatus,
@@ -38,11 +41,23 @@ const CREATED_AT_INDEX = "createdAt-index";
  * Primary Key: userId (HASH) + id (RANGE).
  * GSI createdAt-index: userId (HASH) + createdAt (RANGE) para ordenar de más nuevo a más viejo.
  */
+const PRESIGNED_URL_EXPIRES_IN = 3600;
+
 export class TranscriptionRepository implements ITranscriptionRepository {
   private readonly tableName =
     process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-dev";
+  private readonly s3Client: S3Client;
+  private readonly bucketName: string;
 
-  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
+  constructor(
+    private readonly dynamodbClient: DynamoDBDocumentClient,
+    s3Client?: S3Client
+  ) {
+    this.s3Client =
+      s3Client ??
+      new S3Client({ region: process.env.AWS_REGION ?? "eu-north-1" });
+    this.bucketName = process.env.S3_BUCKET_NAME ?? "";
+  }
 
   async save(transcription: Transcription): Promise<void> {
     try {
@@ -165,6 +180,20 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       console.error("Error deleting transcription:", error);
       throw error;
     }
+  }
+
+  async getAudioUrl(s3Key: string): Promise<string> {
+    if (!s3Key || s3Key.trim() === "") {
+      throw new Error("s3Key is required for getAudioUrl");
+    }
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: s3Key,
+    });
+    const url = await getSignedUrl(this.s3Client, command, {
+      expiresIn: PRESIGNED_URL_EXPIRES_IN,
+    });
+    return url;
   }
 
   async getStatsByUserId(

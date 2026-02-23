@@ -9,5 +9,6 @@ export const createMockTranscriptionRepository =
       update: jest.fn(),
       delete: jest.fn(),
       getStatsByUserId: jest.fn(),
+      getAudioUrl: jest.fn(),
     };
   };
