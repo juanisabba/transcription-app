@@ -335,6 +335,12 @@ resources:
           - email
           - openid
           - profile
+        CallbackUrls:
+          - http://localhost:3000/auth/callback
+          - https://localhost:3000/auth/callback
+        LogoutUrls:
+          - http://localhost:3000
+          - https://localhost:3000
         ExplicitAuthFlows:
           - ALLOW_USER_PASSWORD_AUTH
           - ALLOW_REFRESH_TOKEN_AUTH
