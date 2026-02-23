@@ -2,11 +2,37 @@
   <div class="min-h-[calc(100vh-4.5rem)] bg-gradient-to-br from-blue-50 to-indigo-100">
     <div class="max-w-6xl mx-auto px-4 py-8">
       <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          Historial de Transcripciones
-        </h1>
-        <p class="text-gray-600">Todas tus transcripciones guardadas</p>
+      <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">
+            Historial de Transcripciones
+          </h1>
+          <p class="text-gray-600">Todas tus transcripciones guardadas</p>
+        </div>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          :disabled="uiStore.isLoading"
+          title="Refrescar tabla"
+          @click="handleRefresh"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-5 h-5"
+            :class="{ 'animate-spin': uiStore.isLoading }"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          Refrescar
+        </button>
       </div>
 
       <!-- Error Alert -->
@@ -311,6 +337,11 @@ const goToPage = async (page: number) => {
     query: { ...route.query, page: String(page) },
   });
   await fetchPage(page);
+};
+
+const handleRefresh = async () => {
+  transcriptionStore.invalidatePageCache();
+  await loadPageAndRedirectIfEmpty(pageToLoad.value);
 };
 
 const handleDownload = async (id: string, fileName: string) => {

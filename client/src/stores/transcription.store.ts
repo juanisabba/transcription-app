@@ -127,6 +127,11 @@ export const useTranscriptionStore = defineStore('transcription', () => {
     hasMore.value = false;
   };
 
+  /** Invalida la caché de páginas para forzar recarga desde el servidor */
+  const invalidatePageCache = () => {
+    pageCache.value = {};
+  };
+
   const getTranscriptionById = (id: string): Transcription | undefined => {
     return (
       transcriptions.value.find((t) => t.id === id) ??
@@ -158,6 +163,7 @@ export const useTranscriptionStore = defineStore('transcription', () => {
     removeTranscription,
     updateTranscription,
     clear,
+    invalidatePageCache,
     getCachedPageData,
     getTranscriptionById,
   };

@@ -23,6 +23,8 @@ export interface Transcription {
   content?: string;
   createdAt: string;
   updatedAt?: string;
+  /** URL firmada de S3 para reproducir el audio (solo en detalle, cuando status=completed) */
+  audioUrl?: string;
 }
 
 export interface UploadTranscriptionRequest {

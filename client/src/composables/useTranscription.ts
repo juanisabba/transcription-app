@@ -53,6 +53,26 @@ export const useTranscription = () => {
     }
   };
 
+  const getById = async (id: string) => {
+    const api = useApi();
+    try {
+      uiStore.setLoading(true);
+      const transcription = await transcriptionService.getById(api, id);
+      const existing = transcriptionStore.getTranscriptionById(id);
+      if (existing) {
+        transcriptionStore.updateTranscription(id, transcription);
+      } else {
+        transcriptionStore.addTranscription(transcription);
+      }
+      return transcription;
+    } catch (error: unknown) {
+      uiStore.setError(getApiErrorMessage(error, "Error al cargar transcripción"));
+      throw error;
+    } finally {
+      uiStore.setLoading(false);
+    }
+  };
+
   const list = async (page: number = 1, pageSize: number = 10) => {
     const cached = transcriptionStore.getCachedPageData(page);
     if (cached) {
@@ -191,6 +211,7 @@ export const useTranscription = () => {
     uploadWithConfirmation,
     list,
     fetchPage,
+    getById,
     getStats,
     download,
     remove,

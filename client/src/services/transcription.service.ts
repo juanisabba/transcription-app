@@ -74,6 +74,14 @@ export const transcriptionService = {
     return data;
   },
 
+  getById: async (
+    api: AxiosInstance,
+    id: string,
+  ): Promise<import("../types/transcription.types").Transcription> => {
+    const { data } = await api.get(`/transcriptions/${id}`);
+    return data;
+  },
+
   getStats: async (
     api: AxiosInstance,
   ): Promise<TranscriptionStatsResponse> => {
