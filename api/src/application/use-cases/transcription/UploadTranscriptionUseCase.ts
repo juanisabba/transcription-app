@@ -14,6 +14,17 @@ const AUDIO_MIME_PREFIX = "audio/";
 const PRESIGNED_URL_EXPIRES_IN = 3600;
 
 /**
+ * Sanitiza el nombre de archivo para evitar problemas con Speechmatics/S3:
+ * espacios -> _, paréntesis eliminados (urls con () pueden fallar al descargar).
+ */
+function sanitizeFileName(fileName: string): string {
+  return fileName
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[()]/g, "");
+}
+
+/**
  * Formato de audio preferido: OGG/Opus (nativo de WhatsApp).
  * Ofrece mejor eficiencia de almacenamiento y calidad de voz que MP3/WAV.
  */
@@ -71,15 +82,16 @@ export class UploadTranscriptionUseCase {
       }
     }
 
-    // Paso 3: Crear entidad Transcription
+    // Paso 3: Crear entidad Transcription (nombre sanitizado para S3/Speechmatics)
     const transcriptionId = uuid();
-    const s3Path = `uploads/${userId}/${transcriptionId}/${fileName.trim()}`;
+    const safeFileName = sanitizeFileName(fileName);
+    const s3Path = `uploads/${userId}/${transcriptionId}/${safeFileName}`;
     const now = new Date();
 
     const transcription = new Transcription(
       transcriptionId,
       userId,
-      fileName.trim(),
+      safeFileName,
       fileSize,
       "pending",
       s3Path,
@@ -90,21 +102,28 @@ export class UploadTranscriptionUseCase {
       "batch"
     );
 
-    // Paso 4: Guardar en BD
-    await this.transcriptionRepository.save(transcription);
-    console.log(`[Upload] Saved to DynamoDB: ${transcriptionId}`);
+    try {
+      await this.transcriptionRepository.save(transcription);
+    } catch (saveErr) {
+      console.error("[UploadTranscription] save error:", saveErr);
+      throw saveErr;
+    }
 
-    // Paso 5: Generar presigned URL
-    const uploadUrl = await this.storageService.generatePresignedUrl(
-      s3Path,
-      PRESIGNED_URL_EXPIRES_IN
-    );
+    try {
+      const uploadUrl = await this.storageService.generatePresignedUrl(
+        s3Path,
+        PRESIGNED_URL_EXPIRES_IN
+      );
 
-    // Paso 6: Retornar DTO
-    return {
-      uploadUrl,
-      transcriptionId,
-      expiresIn: PRESIGNED_URL_EXPIRES_IN,
-    };
+      // Paso 6: Retornar DTO
+      return {
+        uploadUrl,
+        transcriptionId,
+        expiresIn: PRESIGNED_URL_EXPIRES_IN,
+      };
+    } catch (urlErr) {
+      console.error("[UploadTranscription] presigned URL error:", urlErr);
+      throw urlErr;
+    }
   }
 }

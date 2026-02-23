@@ -76,7 +76,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     return apiResponse(200, { id: transcriptionId, status: "processing" }, { event });
   } catch (error) {
-    console.error("ConfirmUploadHandler error:", error);
+    console.error("[ConfirmUploadHandler] error:", error);
 
     if (
       error instanceof UnauthorizedError ||

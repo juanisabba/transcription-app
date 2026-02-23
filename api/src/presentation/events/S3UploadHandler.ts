@@ -33,33 +33,52 @@ function parseS3Key(key: string): { userId: string; transcriptionId: string } | 
   return { userId, transcriptionId };
 }
 
+/**
+ * Archivos realtime se guardan como realtime_audio.{ext}. Esos ya fueron finalizados
+ * por SaveRealtimeTranscription. No debemos ejecutar StartTranscriptionUseCase (batch)
+ * porque sobrescribiría el status "completed" con "processing".
+ */
+function isRealtimeAudioKey(key: string): boolean {
+  const decoded = decodeURIComponent(key.replace(/\+/g, " "));
+  return decoded.includes("realtime_audio");
+}
+
 export const handler: S3Handler = async (event: S3Event): Promise<void> => {
   for (const record of event.Records) {
     const key = record.s3.object.key;
     const objectSize = record.s3.object.size ?? 0;
     if (objectSize > MAX_FILE_SIZE_BYTES) {
-      console.error(
-        `[S3UploadHandler] Object size ${objectSize} exceeds limit ${MAX_FILE_SIZE_BYTES}, skipping`
-      );
+      console.error("[S3UploadHandler] Object size exceeds limit:", key, objectSize, MAX_FILE_SIZE_BYTES);
+      continue;
+    }
+
+    if (isRealtimeAudioKey(key)) {
       continue;
     }
 
     const parsed = parseS3Key(key);
     if (!parsed) {
-      console.error(`[S3UploadHandler] Could not parse key: ${key}`);
+      console.error("[S3UploadHandler] Invalid key format:", key);
       continue;
     }
 
     const { userId, transcriptionId } = parsed;
 
     try {
+      const existing = await transcriptionRepository.findById(transcriptionId, userId);
+      if (existing?.status === "completed") {
+        continue;
+      }
+
       await useCase.execute(userId, transcriptionId, key);
-      console.log(`[S3UploadHandler] Speechmatics job submitted: transcriptionId=${transcriptionId}`);
     } catch (error) {
-      console.error(
-        `[S3UploadHandler] Failed to start transcription job for transcriptionId=${transcriptionId}:`,
-        error
-      );
+      const err = error as Error & { name?: string };
+      if (err.name === "ConditionalCheckFailedException") {
+        continue;
+      }
+      console.error("[S3UploadHandler] Failed to start transcription:", transcriptionId, error);
+      // Re-lanzar para que Lambda reintente: si fallamos tras enviar el job, el jobId podría no haberse guardado
+      throw error;
     }
   }
 };

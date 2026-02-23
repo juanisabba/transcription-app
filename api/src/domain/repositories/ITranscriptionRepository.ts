@@ -59,9 +59,17 @@ export interface ITranscriptionRepository {
    * la transcripción o tras un fallo).
    *
    * @param transcription - Entidad de transcripción con los datos actualizados.
+   * @param options - Condiciones: onlyIfStatus (único) o onlyIfStatusIn (varios) para actualizar solo si el estado coincide.
    * @returns Una promesa que se resuelve cuando la actualización se ha aplicado.
    */
-  update(transcription: Transcription): Promise<void>;
+  update(
+    transcription: Transcription,
+    options?: {
+      onlyIfStatus?: "pending" | "processing" | "completed" | "failed";
+      /** Permite Batch webhook: actualizar a completed si está en pending O processing (evita bloqueo por race S3/Confirm) */
+      onlyIfStatusIn?: Array<"pending" | "processing" | "completed" | "failed">;
+    }
+  ): Promise<void>;
 
   /**
    * Elimina una transcripción del almacenamiento.

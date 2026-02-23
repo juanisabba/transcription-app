@@ -64,7 +64,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       expiresIn: result.expiresIn,
     }, { event });
   } catch (error) {
-    console.error("UploadHandler error:", error);
+    console.error("[UploadHandler] error:", error);
 
     if (
       error instanceof InvalidFileTypeException ||

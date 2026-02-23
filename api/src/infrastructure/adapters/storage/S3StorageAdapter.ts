@@ -63,11 +63,15 @@ export class S3StorageAdapter implements IStorageService {
     return url;
   }
 
+  /**
+   * Genera URL presignada para GET (GetObject).
+   * Usada por Speechmatics para descargar el audio. Mínimo 1 hora de validez.
+   */
   async generateDownloadPresignedUrl(
     key: string,
     expiresIn: number = DEFAULT_EXPIRES_IN
   ): Promise<string> {
-    const safeExpiresIn = Math.min(Math.max(expiresIn, 60), 86400); // entre 1 min y 24 h
+    const safeExpiresIn = Math.max(Math.min(expiresIn, 86400), 3600); // mínimo 1 h, máximo 24 h
     const command = new GetObjectCommand({
       Bucket: this.bucketName,
       Key: key,

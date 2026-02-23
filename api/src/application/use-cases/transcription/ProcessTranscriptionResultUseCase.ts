@@ -31,8 +31,13 @@ export class ProcessTranscriptionResultUseCase {
     let transcriptText = transcript;
 
     if (transcriptText === undefined || transcriptText === "") {
-      const result = await this.externalApiService.getResult(jobId);
-      transcriptText = result.transcript;
+      try {
+        const result = await this.externalApiService.getResult(jobId);
+        transcriptText = result.transcript;
+      } catch (fetchErr) {
+        console.error("[ProcessTranscriptionResult] getResult error:", jobId, fetchErr);
+        throw fetchErr;
+      }
     }
 
     const transcription = await this.transcriptionRepository.findById(
@@ -44,8 +49,12 @@ export class ProcessTranscriptionResultUseCase {
       throw new Error(`Transcripción ${transcriptionId} no encontrada`);
     }
 
-    transcription.updateStatus("completed");
+    if (transcription.status === "completed" || transcription.status === "failed") {
+      return;
+    }
+
     transcription.updateContent(transcriptText ?? "");
+    transcription.updateStatus("completed");
 
     await this.transcriptionRepository.update(transcription);
   }

@@ -37,6 +37,48 @@ function getBearerToken(event: { headers?: Record<string, string | undefined> })
   return token || null;
 }
 
+/**
+ * Obtiene el userId de forma segura.
+ * En producción: requestContext.authorizer.claims.sub (Cognito) o validación del token.
+ * En local (serverless-offline): fallback a X-User-Id para desarrollo cuando el authorizer no inyecta claims.
+ */
+async function getUserId(event: Parameters<APIGatewayProxyHandler>[0]): Promise<string | null> {
+  // 1. Intentar desde authorizer (API Gateway en producción inyecta claims de Cognito)
+  try {
+    const authorizer = event.requestContext?.authorizer as { claims?: { sub?: string } } | undefined;
+    const sub = authorizer?.claims?.sub;
+    if (typeof sub === "string" && sub.trim() !== "") {
+      return sub.trim();
+    }
+  } catch {
+    // authorizer puede ser undefined o tener estructura distinta en serverless-offline
+  }
+
+  // 2. Fallback: validar token Bearer
+  const token = getBearerToken(event);
+  if (token) {
+    try {
+      const claims = await authService.validateToken(token);
+      const sub = claims?.sub;
+      if (typeof sub === "string" && sub.trim() !== "") {
+        return sub.trim();
+      }
+    } catch {
+      // Token inválido; continuar al siguiente fallback (p. ej. X-User-Id en local)
+    }
+  }
+
+  // 3. En local: header X-User-Id para desarrollo (solo cuando IS_OFFLINE)
+  if (process.env.IS_OFFLINE === "true") {
+    const devUserId = event.headers?.["X-User-Id"] ?? event.headers?.["x-user-id"];
+    if (typeof devUserId === "string" && devUserId.trim() !== "") {
+      return devUserId.trim();
+    }
+  }
+
+  return null;
+}
+
 interface MultipartFile {
   type?: string;
   filename?: string;
@@ -61,19 +103,15 @@ interface ParsedMultipart {
  */
 export const handler: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
   try {
-    const token = getBearerToken(event);
-    if (!token) {
+    const userId = await getUserId(event);
+    if (!userId) {
+      const hasToken = !!getBearerToken(event);
       return apiResponse(401, {
         code: "UNAUTHORIZED",
-        message: "Falta el header de autorización",
+        message: hasToken
+          ? "Token inválido o expirado"
+          : "Falta el header de autorización (o X-User-Id en local)",
       }, { event });
-    }
-
-    const claims = await authService.validateToken(token);
-    const userId = claims.sub;
-
-    if (!userId || userId.trim() === "") {
-      throw new ValidationError("userId no puede ser null o vacío");
     }
 
     const transcriptionId = event.pathParameters?.id;
@@ -196,14 +234,13 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       fileName,
       duration
     );
-    console.log(`[RealtimeSave] Saved to S3 + DynamoDB: ${transcriptionId}`);
 
     return apiResponse(200, {
       transcriptionId: result.transcriptionId,
       status: "completed",
     }, { event });
   } catch (error) {
-    console.error("[RealtimeSave] ❌ Error:", error);
+    console.error("[SaveRealtimeTranscriptionHandler] error:", error);
 
     if (
       error instanceof UnauthorizedError ||

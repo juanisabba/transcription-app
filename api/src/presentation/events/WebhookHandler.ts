@@ -41,9 +41,6 @@ const jsonResponse = (status: number, body: object): APIGatewayProxyResult =>
   apiResponse(status, body);
 
 export const handler: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
-  // LOG AÑADIDO PARA DEPURACIÓN
-  console.log("Evento recibido de Speechmatics:", JSON.stringify(event, null, 2));
-
   try {
     if (!event.body) {
       return jsonResponse(400, { error: "Missing request body" });
@@ -84,15 +81,11 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       const mapping = await jobMappingRepository.findByJobId(jobId);
 
       if (!mapping) {
-        console.error(`Webhook: no mapping found for jobId=${jobId}`);
         return jsonResponse(200, { ok: true, warning: "No mapping found" });
       }
 
       const { userId, transcriptionId } = mapping;
       if (!userId) {
-        console.error(
-          `Webhook: mapping for jobId=${jobId} lacks userId (legacy record?). Keys: transcriptionId=${transcriptionId}`
-        );
         return jsonResponse(200, { ok: true, warning: "No userId in mapping" });
       }
 
@@ -100,15 +93,14 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         mapping.transcriptionId ?? (mapping as { id?: string }).id ?? jobId;
 
       await useCase.execute(jobId, transcriptionIdToUse, userId, transcript);
-      console.log(`Webhook: Successfully processed jobId=${jobId}`);
     } catch (err) {
-      console.error("WebhookHandler background error:", err);
+      console.error("[WebhookHandler] useCase.execute error:", err);
       // Retornamos 200 de todos modos para que Speechmatics no reintente infinitamente si es un error de lógica
     }
 
     return jsonResponse(200, { ok: true });
   } catch (err) {
-    console.error("WebhookHandler unexpected error:", err);
+    console.error("[WebhookHandler] unexpected error:", err);
     return jsonResponse(502, { error: "Internal webhook processing error" });
   }
 };

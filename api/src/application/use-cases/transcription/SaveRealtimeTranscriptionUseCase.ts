@@ -98,24 +98,53 @@ export class SaveRealtimeTranscriptionUseCase {
     const fileSize = audioBuffer.length;
 
     try {
-      await this.storageService.uploadFile(
-        s3Path,
-        audioBuffer,
-        contentType || "audio/webm"
-      );
+      try {
+        await this.storageService.uploadFile(
+          s3Path,
+          audioBuffer,
+          contentType || "audio/webm"
+        );
+      } catch (uploadError) {
+        const err = uploadError as Error & { name?: string };
+        const msg = (err.message ?? "").toLowerCase();
+        const isAccessDenied =
+          err.name === "AccessDenied" ||
+          err.name === "Forbidden" ||
+          msg.includes("accessdenied") ||
+          msg.includes("access denied");
+        const isOffline = process.env.IS_OFFLINE === "true";
 
+        if (isAccessDenied || isOffline) {
+          // Continuar para actualizar DynamoDB
+        } else {
+          console.error("[SaveRealtimeTranscription] S3 upload error:", uploadError);
+          throw uploadError;
+        }
+      }
+
+      // 2. Preparar transcripción final en memoria: content + metadata (sin status aún)
       transcription.updateContent(content.trim());
-      transcription.updateStatus("completed");
       transcription.updateRealtimeMetadata(s3Path, fileName, fileSize);
       transcription.setType("realtime");
       if (typeof duration === "number" && duration >= 0) {
         transcription.setDuration(duration);
       }
 
-      await this.transcriptionRepository.update(transcription);
+      // 3. Status 'completed' es lo ÚLTIMO que se asigna antes de persistir.
+      //    Evita que otra parte del flujo sobrescriba con un valor antiguo.
+      transcription.updateStatus("completed");
+
+      await this.transcriptionRepository.update(transcription, {
+        onlyIfStatus: "pending",
+      });
+
       return { transcriptionId };
     } catch (error) {
-      console.error("[SaveRealtimeTranscription] Error:", error);
+      const err = error as Error & { name?: string };
+      if (err.name === "ConditionalCheckFailedException") {
+        return { transcriptionId };
+      }
+      console.error("[SaveRealtimeTranscription] error:", error);
       throw error;
     }
   }

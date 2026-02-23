@@ -100,8 +100,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
 
       return { jobId: data.id };
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error("[Speechmatics] ERROR:", msg, error);
+      console.error("[Speechmatics] submitJob error:", error);
       throw error;
     }
   }
@@ -114,21 +113,26 @@ export class SpeechMaticsAdapter implements IExternalApiService {
   }
 
   async getResult(jobId: string): Promise<{ transcript: string }> {
-    const { data } = await this.request<SpeechmaticsTranscriptResponse>(
-      "GET",
-      `/jobs/${jobId}/transcript`
-    );
+    try {
+      const { data } = await this.request<SpeechmaticsTranscriptResponse>(
+        "GET",
+        `/jobs/${jobId}/transcript`
+      );
 
-    const results = data.results ?? [];
-    const transcript = results
-      .filter(
-        (r: SpeechmaticsTranscriptResult) => r.type === "word" && r.alternatives?.[0]?.content
-      )
-      .map((r: SpeechmaticsTranscriptResult) => r.alternatives![0].content)
-      .join(" ")
-      .trim();
+      const results = data.results ?? [];
+      const transcript = results
+        .filter(
+          (r: SpeechmaticsTranscriptResult) => r.type === "word" && r.alternatives?.[0]?.content
+        )
+        .map((r: SpeechmaticsTranscriptResult) => r.alternatives![0].content)
+        .join(" ")
+        .trim();
 
-    return { transcript };
+      return { transcript };
+    } catch (error) {
+      console.error("[Speechmatics] getResult error:", jobId, error);
+      throw error;
+    }
   }
 
   async createRealtimeToken(ttl: number = 60): Promise<{ token: string; wsUrl: string }> {

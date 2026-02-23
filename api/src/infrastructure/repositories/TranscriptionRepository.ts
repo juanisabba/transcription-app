@@ -40,7 +40,7 @@ const CREATED_AT_INDEX = "createdAt-index";
  */
 export class TranscriptionRepository implements ITranscriptionRepository {
   private readonly tableName =
-    process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-dev";
+    process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-juani";
 
   constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
 
@@ -51,9 +51,8 @@ export class TranscriptionRepository implements ITranscriptionRepository {
           TableName: this.tableName,
           Item: this.mapToItem(transcription),
           ConditionExpression: "attribute_not_exists(id)",
-        }),
+        })
       );
-      console.log(`[TranscriptionRepo] Saved to DynamoDB: ${transcription.id}`);
     } catch (error: unknown) {
       if (
         typeof error === "object" &&
@@ -61,11 +60,8 @@ export class TranscriptionRepository implements ITranscriptionRepository {
         "name" in error &&
         (error as { name: string }).name === "ConditionalCheckFailedException"
       ) {
-        throw new Error(
-          `Transcription with id ${transcription.id} already exists`,
-        );
+        throw new Error(`Transcription with id ${transcription.id} already exists`);
       }
-      console.error("Error saving transcription:", error);
       throw error;
     }
   }
@@ -79,7 +75,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
             userId,
             id,
           },
-        }),
+        })
       );
 
       if (!result.Item) {
@@ -87,7 +83,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       }
       return this.mapToDomain(result.Item as TranscriptionItem);
     } catch (error: unknown) {
-      console.error("Error finding transcription by id:", error);
+      console.error("[TranscriptionRepo] findById error:", id, userId, error);
       throw error;
     }
   }
@@ -95,7 +91,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
   async findByUserId(
     userId: string,
     limit?: number,
-    cursor?: string,
+    cursor?: string
   ): Promise<{
     items: Transcription[];
     hasMore: boolean;
@@ -122,28 +118,29 @@ export class TranscriptionRepository implements ITranscriptionRepository {
           Limit: pageSize + 1,
           ScanIndexForward: false, // Orden descendente (más recientes primero)
           ...(exclusiveStartKey && { ExclusiveStartKey: exclusiveStartKey }),
-        }),
+        })
       );
 
       const allItems = (result.Items ?? []).map((item) =>
-        this.mapToDomain(item as TranscriptionItem),
+        this.mapToDomain(item as TranscriptionItem)
       );
 
       const hasMore = allItems.length > pageSize;
       const items = hasMore ? allItems.slice(0, pageSize) : allItems;
       // Cursor debe incluir userId, id (SK tabla), createdAt (SK GSI) para que
       // ExclusiveStartKey identifique exactamente el ítem tras el que continuar.
-      const nextCursor = hasMore && items.length > 0
-        ? (() => {
-            const lastItem = items[items.length - 1];
-            const cursorKey: Record<string, unknown> = {
-              userId,
-              id: lastItem.id,
-              createdAt: lastItem.createdAt.getTime(),
-            };
-            return this.encodeCursor(cursorKey);
-          })()
-        : undefined;
+      const nextCursor =
+        hasMore && items.length > 0
+          ? (() => {
+              const lastItem = items[items.length - 1];
+              const cursorKey: Record<string, unknown> = {
+                userId,
+                id: lastItem.id,
+                createdAt: lastItem.createdAt.getTime(),
+              };
+              return this.encodeCursor(cursorKey);
+            })()
+          : undefined;
 
       return { items, hasMore, nextCursor };
     } catch (error: unknown) {
@@ -158,9 +155,8 @@ export class TranscriptionRepository implements ITranscriptionRepository {
         new DeleteCommand({
           TableName: this.tableName,
           Key: { userId, id },
-        }),
+        })
       );
-      console.log(`[TranscriptionRepo] Deleted from DynamoDB: ${id}`);
     } catch (error: unknown) {
       console.error("Error deleting transcription:", error);
       throw error;
@@ -168,7 +164,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
   }
 
   async getStatsByUserId(
-    userId: string,
+    userId: string
   ): Promise<{ totalBatchSeconds: number; totalRealtimeSeconds: number }> {
     try {
       let totalBatchSeconds = 0;
@@ -182,7 +178,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
             KeyConditionExpression: "userId = :userId",
             ExpressionAttributeValues: { ":userId": userId },
             ...(exclusiveStartKey && { ExclusiveStartKey: exclusiveStartKey }),
-          }),
+          })
         );
 
         for (const item of result.Items ?? []) {
@@ -205,9 +201,14 @@ export class TranscriptionRepository implements ITranscriptionRepository {
     }
   }
 
-  async update(transcription: Transcription): Promise<void> {
+  async update(
+    transcription: Transcription,
+    options?: {
+      onlyIfStatus?: TranscriptionStatus;
+      onlyIfStatusIn?: TranscriptionStatus[];
+    }
+  ): Promise<void> {
     try {
-      // CORREGIDO: Usar ambas claves
       const updateParts: string[] = [
         "#status = :status",
         "#content = :content",
@@ -250,20 +251,54 @@ export class TranscriptionRepository implements ITranscriptionRepository {
         exprValues[":type"] = transcription.type;
       }
 
-      await this.dynamodbClient.send(
-        new UpdateCommand({
-          TableName: this.tableName,
-          Key: {
-            userId: transcription.userId,
-            id: transcription.id,
-          },
-          UpdateExpression: `SET ${updateParts.join(", ")}`,
-          ExpressionAttributeNames: exprNames,
-          ExpressionAttributeValues: exprValues,
-        }),
-      );
+      // Batch flow (pending -> processing): no aplicar restricción de estado.
+      // El Realtime usa onlyIfStatus para evitar sobrescrituras; el Batch debe ser ciudadano de primera clase.
+      const isBatchPendingToProcessing =
+        options?.onlyIfStatus === "pending" && transcription.status === "processing";
+
+      let conditionExpression: string | undefined;
+      if (!isBatchPendingToProcessing && options?.onlyIfStatus !== undefined) {
+        exprValues[":expectedStatus"] = options.onlyIfStatus;
+        conditionExpression = "#status = :expectedStatus";
+      } else if (
+        !isBatchPendingToProcessing &&
+        options?.onlyIfStatusIn !== undefined &&
+        options.onlyIfStatusIn.length > 0
+      ) {
+        const conditions = options.onlyIfStatusIn.map((s, i) => {
+          const placeholder = `:expectedStatus${i}`;
+          exprValues[placeholder] = s;
+          return `#status = ${placeholder}`;
+        });
+        conditionExpression = `(${conditions.join(" OR ")})`;
+      }
+
+      // Tabla: Partition Key userId (HASH) + Sort Key id (RANGE). Ambas llaves son obligatorias.
+      const key = {
+        userId: transcription.userId,
+        id: transcription.id,
+      };
+
+      const updateCommand = new UpdateCommand({
+        TableName: this.tableName,
+        Key: key,
+        UpdateExpression: `SET ${updateParts.join(", ")}`,
+        ExpressionAttributeNames: exprNames,
+        ExpressionAttributeValues: exprValues,
+        ...(conditionExpression && { ConditionExpression: conditionExpression }),
+      });
+
+      await this.dynamodbClient.send(updateCommand);
     } catch (error: unknown) {
-      console.error("Error updating transcription:", error);
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error as { name: string }).name === "ConditionalCheckFailedException"
+      ) {
+        throw error;
+      }
+      console.error("[TranscriptionRepo] update error:", error);
       throw error;
     }
   }
@@ -302,7 +337,7 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       new Date(item.createdAt),
       new Date(updatedAt),
       item.duration,
-      item.type,
+      item.type
     );
   }
 
@@ -311,18 +346,17 @@ export class TranscriptionRepository implements ITranscriptionRepository {
   }
 
   private decodeCursor(cursor: string): Record<string, unknown> {
-    return JSON.parse(
-      Buffer.from(cursor, "base64url").toString("utf-8"),
-    ) as Record<string, unknown>;
+    return JSON.parse(Buffer.from(cursor, "base64url").toString("utf-8")) as Record<
+      string,
+      unknown
+    >;
   }
 
   /**
    * Normaliza el cursor decodificado para pasarlo como ExclusiveStartKey.
    * Garantiza que createdAt sea Number (evita saltos por tipo incorrecto).
    */
-  private normalizeExclusiveStartKey(
-    decoded: Record<string, unknown>,
-  ): Record<string, unknown> {
+  private normalizeExclusiveStartKey(decoded: Record<string, unknown>): Record<string, unknown> {
     const createdAt = decoded.createdAt;
     const normalized: Record<string, unknown> = {
       userId: decoded.userId,
