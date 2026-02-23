@@ -84,7 +84,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         return jsonResponse(200, { ok: true, warning: "No mapping found" });
       }
 
-      const { userId, transcriptionId } = mapping;
+      const { userId } = mapping;
       if (!userId) {
         return jsonResponse(200, { ok: true, warning: "No userId in mapping" });
       }
