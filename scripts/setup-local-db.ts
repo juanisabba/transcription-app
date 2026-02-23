@@ -2,7 +2,7 @@
  * Script de inicialización para DynamoDB Local.
  * Crea las tablas:
  * - vocali-users-dev: UserRepository.findByEmail (GSI email-index)
- * - vocali-transcriptions-v2-dev: TranscriptionRepository.findByUserId (PK: userId, SK: id)
+ * - vocali-transcriptions-dev: TranscriptionRepository.findByUserId (PK: userId, SK: id)
  *
  * Uso: pnpm run setup:local-db
  * Requiere: DynamoDB Local corriendo en http://localhost:8000
@@ -18,7 +18,7 @@ import {
 const ENDPOINT = process.env.DYNAMODB_ENDPOINT ?? "http://localhost:8000";
 const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE ?? "vocali-users-dev";
 const TRANSCRIPTIONS_TABLE =
-  process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-v2-dev";
+  process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-dev";
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION ?? "eu-west-1",

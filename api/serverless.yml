@@ -28,8 +28,8 @@ provider:
           Resource:
             - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-users-${self:provider.stage}"
             - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-users-${self:provider.stage}/index/*"
-            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-transcriptions-v2-${self:provider.stage}"
-            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-transcriptions-v2-${self:provider.stage}/index/*"
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-transcriptions-${self:provider.stage}"
+            - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-transcriptions-${self:provider.stage}/index/*"
             - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/vocali-job-mapping-${self:provider.stage}"
         - Effect: Allow
           Action:
@@ -37,8 +37,8 @@ provider:
             - s3:PutObject
             - s3:DeleteObject
           Resource:
-            - !Sub "arn:aws:s3:::vocali-transcriptions-v2-${self:provider.stage}"
-            - !Sub "arn:aws:s3:::vocali-transcriptions-v2-${self:provider.stage}/*"
+            - !Sub "arn:aws:s3:::vocali-transcriptions-${self:provider.stage}"
+            - !Sub "arn:aws:s3:::vocali-transcriptions-${self:provider.stage}/*"
         - Effect: Allow
           Action:
             - cognito-idp:AdminInitiateAuth
@@ -51,9 +51,9 @@ provider:
   environment:
     STAGE: ${self:provider.stage}
     DYNAMODB_USERS_TABLE: vocali-users-${self:provider.stage}
-    DYNAMODB_TRANSCRIPTIONS_TABLE: vocali-transcriptions-v2-${self:provider.stage}
+    DYNAMODB_TRANSCRIPTIONS_TABLE: vocali-transcriptions-${self:provider.stage}
     DYNAMODB_JOB_MAPPING_TABLE: vocali-job-mapping-${self:provider.stage}
-    S3_BUCKET_NAME: vocali-transcriptions-v2-${self:provider.stage}
+    S3_BUCKET_NAME: vocali-transcriptions-${self:provider.stage}
     SPEECHMATICS_API_KEY: ${env:SPEECHMATICS_API_KEY, ''}
     SPEECHMATICS_WEBHOOK_URL: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
     SPEECHMATICS_WEBHOOK_SECRET: ${env:SPEECHMATICS_WEBHOOK_SECRET, ''}
@@ -243,7 +243,7 @@ resources:
     TranscriptionsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: vocali-transcriptions-v2-${self:provider.stage}
+        TableName: vocali-transcriptions-${self:provider.stage}
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: userId
@@ -290,7 +290,7 @@ resources:
     TranscriptionsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: vocali-transcriptions-v2-${self:provider.stage}
+        BucketName: vocali-transcriptions-${self:provider.stage}
         CorsConfiguration:
           CorsRules:
             - AllowedHeaders:
