@@ -45,23 +45,16 @@ jobs:
         env:
           NUXT_SKIP_OXC: true
 
-      - name: Prepare Nuxt types (client)
-        run: pnpm --filter client nuxi prepare
-        env:
-          NUXT_SKIP_OXC: true
-
       - name: Lint (API)
         run: pnpm --filter api run lint
         env:
           NUXT_SKIP_OXC: true
 
-      - name: Build (API)
-        run: pnpm --filter api run build
-        env:
-          NUXT_SKIP_OXC: true
+      # Nota: Se ha eliminado el "Build (API)" manual para dejar que Serverless v4 use su esbuild nativo
 
       - name: Deploy to production
-        run: pnpm --filter api exec serverless deploy --stage prod
+        working-directory: api
+        run: pnpm exec serverless deploy --stage prod
         env:
           STAGE: prod
           COGNITO_AUTO_CONFIRM: "false"

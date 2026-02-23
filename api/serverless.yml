@@ -204,8 +204,8 @@ functions:
           path: webhook/speechmatics
           method: post
 
-# package:
-#   individually: true
+package:
+  individually: false
 #   patterns:
 #     - "!**"
 #     - "src/**"
@@ -216,6 +216,8 @@ build:
     minify: false
     platform: node
     target: node18
+    external:
+      - "@aws-sdk/*" # El SDK ya está en el runtime de Lambda, esto aligera el bundle
 
 plugins:
   - serverless-offline
