@@ -1,5 +1,11 @@
 service: vocali-api
 
+# Authorizer Cognito reutilizable (Serverless v4 no soporta provider.apiGateway.authorizers)
+x-cognito-authorizer: &cognitoAuthorizer
+  name: MyCognitoAuth
+  type: COGNITO_USER_POOLS
+  arn: !GetAtt CognitoUserPool.Arn
+
 frameworkVersion: "4"
 
 provider:
@@ -11,10 +17,6 @@ provider:
     shouldStartNameWithService: true
     binaryMediaTypes:
       - "multipart/form-data"
-    authorizers:
-      MyCognitoAuth:
-        type: COGNITO_USER_POOLS
-        arn: !GetAtt CognitoUserPool.Arn
   memorySize: 512
   timeout: 28
 
@@ -99,7 +101,7 @@ functions:
           path: auth/logout
           method: post
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   # ===== TRANSCRIPTION ENDPOINTS =====
 
@@ -110,7 +112,7 @@ functions:
           path: transcriptions/upload
           method: post
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   realtimeSession:
     handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
@@ -119,7 +121,7 @@ functions:
           path: transcriptions/realtime
           method: post
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   realtimeToken:
     handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
@@ -128,7 +130,7 @@ functions:
           path: transcriptions/realtime/token
           method: post
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   saveRealtimeTranscription:
     handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
@@ -137,7 +139,7 @@ functions:
           path: transcriptions/realtime/{id}/save
           method: post
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   listTranscriptions:
     handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
@@ -146,7 +148,7 @@ functions:
           path: transcriptions
           method: get
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   statsTranscriptions:
     handler: dist/src/presentation/http/transcription/StatsHandler.handler
@@ -155,7 +157,7 @@ functions:
           path: transcriptions/stats
           method: get
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   downloadTranscription:
     handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
@@ -164,7 +166,7 @@ functions:
           path: transcriptions/{id}/download
           method: get
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   deleteTranscription:
     handler: dist/src/presentation/http/transcription/DeleteHandler.handler
@@ -173,7 +175,7 @@ functions:
           path: transcriptions/{id}
           method: delete
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   confirmUpload:
     handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
@@ -182,7 +184,7 @@ functions:
           path: transcriptions/{id}/confirm
           method: post
           cors: true
-          authorizer: MyCognitoAuth
+          authorizer: *cognitoAuthorizer
 
   # ===== S3 EVENT TRIGGERS =====
 
@@ -334,6 +336,11 @@ resources:
         RefreshTokenValidity: 30
 
 custom:
+  dotenv:
+    exclude:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_REGION
   dynamodb:
     stages:
       - local
