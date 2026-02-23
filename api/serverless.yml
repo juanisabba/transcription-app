@@ -157,15 +157,6 @@ functions:
           cors: true
           authorizer: ${self:custom.cognitoAuthorizer}
 
-  getTranscription:
-    handler: dist/presentation/http/transcription/GetTranscriptionHandler.handler
-    events:
-      - http:
-          path: transcriptions/{id}
-          method: get
-          cors: true
-          authorizer: ${self:custom.cognitoAuthorizer}
-
   downloadTranscription:
     handler: dist/presentation/http/transcription/DownloadTranscriptionHandler.handler
     events:

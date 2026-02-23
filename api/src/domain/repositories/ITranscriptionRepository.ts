@@ -84,12 +84,4 @@ export interface ITranscriptionRepository {
   getStatsByUserId(
     userId: string
   ): Promise<{ totalBatchSeconds: number; totalRealtimeSeconds: number }>;
-
-  /**
-   * Genera una URL firmada (presigned) para acceder al audio en S3.
-   *
-   * @param s3Key - Clave del objeto en S3 (ej. s3Path de la transcripción).
-   * @returns URL firmada con expiración de 3600 segundos.
-   */
-  getAudioUrl(s3Key: string): Promise<string>;
 }

@@ -26,9 +26,6 @@
           </NuxtLink>
         </div>
 
-        <!-- Audio Player -->
-        <AudioPlayer v-if="transcription?.audioUrl" :audio-url="transcription.audioUrl" />
-
         <!-- Transcription Content -->
         <div class="bg-white rounded-lg shadow-lg p-8">
           <div class="prose max-w-none">
@@ -91,7 +88,7 @@
 
 <script setup lang="ts">
 const route = useRoute();
-const { list, getById, download, remove } = useTranscription();
+const { list, download, remove } = useTranscription();
 const { repairUtf8Mojibake } = useTextEncoding();
 const transcriptionStore = useTranscriptionStore();
 const uiStore = useUiStore();
@@ -147,16 +144,8 @@ const confirmDelete = async () => {
 };
 
 onMounted(async () => {
-  const id = route.params.id as string;
-  const cached = transcriptionStore.getTranscriptionById(id);
-  if (!cached) {
+  if (transcriptionStore.transcriptions.length === 0) {
     await list(1);
-  }
-  // Siempre cargar detalle para obtener audioUrl (URL firmada)
-  try {
-    await getById(id);
-  } catch {
-    // Si falla (ej. 404), el computed transcription será null
   }
 });
 </script>
