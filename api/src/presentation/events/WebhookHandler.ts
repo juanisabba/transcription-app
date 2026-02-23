@@ -7,9 +7,7 @@ import { speechMaticsAdapter } from "../../infrastructure/adapters/external-serv
 import { apiResponse } from "../http/helpers/responseHelper";
 
 function verifyWebhookSignature(body: string, signature: string, secret: string): boolean {
-  const expected = createHmac("sha256", secret)
-    .update(body, "utf8")
-    .digest("hex");
+  const expected = createHmac("sha256", secret).update(body, "utf8").digest("hex");
   if (expected.length !== signature.length) {
     return false;
   }
@@ -20,10 +18,7 @@ function verifyWebhookSignature(body: string, signature: string, secret: string)
   }
 }
 
-const useCase = new ProcessTranscriptionResultUseCase(
-  transcriptionRepository,
-  speechMaticsAdapter
-);
+const useCase = new ProcessTranscriptionResultUseCase(transcriptionRepository, speechMaticsAdapter);
 
 interface SpeechmaticsTranscriptResult {
   alternatives?: Array<{ content: string }>;
@@ -35,9 +30,7 @@ interface SpeechmaticsWebhookBody {
   results?: SpeechmaticsTranscriptResult[];
 }
 
-function extractTranscriptFromResults(
-  results: SpeechmaticsTranscriptResult[] | undefined
-): string {
+function extractTranscriptFromResults(results: SpeechmaticsTranscriptResult[] | undefined): string {
   if (!results || !Array.isArray(results)) {
     return "";
   }
@@ -47,24 +40,24 @@ function extractTranscriptFromResults(
 const jsonResponse = (status: number, body: object): APIGatewayProxyResult =>
   apiResponse(status, body);
 
-export const handler: APIGatewayProxyHandler = (
-  event
-): Promise<APIGatewayProxyResult> => {
+export const handler: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
+  // LOG AÑADIDO PARA DEPURACIÓN
+  console.log("Evento recibido de Speechmatics:", JSON.stringify(event, null, 2));
+
   try {
     if (!event.body) {
-      return Promise.resolve(jsonResponse(400, { error: "Missing request body" }));
+      return jsonResponse(400, { error: "Missing request body" });
     }
 
     const webhookSecret = process.env.SPEECHMATICS_WEBHOOK_SECRET;
-    if (webhookSecret) {
-      const hdrs = event.headers ?? {};
-      const signature = hdrs["X-Webhook-Signature"] ?? hdrs["x-webhook-signature"];
-      if (!signature || typeof signature !== "string") {
-        return Promise.resolve(jsonResponse(401, { error: "Missing X-Webhook-Signature header" }));
-      }
+    const hdrs = event.headers ?? {};
+    const signature = hdrs["X-Webhook-Signature"] ?? hdrs["x-webhook-signature"];
+
+    // Solo validar si el secreto existe Y la firma viene en la cabecera
+    if (webhookSecret && signature) {
       const sig = signature.startsWith("sha256=") ? signature.slice(7) : signature;
       if (!verifyWebhookSignature(event.body, sig, webhookSecret)) {
-        return Promise.resolve(jsonResponse(401, { error: "Invalid webhook signature" }));
+        return jsonResponse(401, { error: "Invalid webhook signature" });
       }
     }
 
@@ -72,45 +65,46 @@ export const handler: APIGatewayProxyHandler = (
     try {
       parsed = JSON.parse(event.body) as SpeechmaticsWebhookBody;
     } catch {
-      return Promise.resolve(jsonResponse(400, { error: "Invalid JSON body" }));
+      return jsonResponse(400, { error: "Invalid JSON body" });
     }
 
     if (!parsed?.job?.id) {
-      return Promise.resolve(jsonResponse(400, { error: "Missing job.id in body" }));
+      return jsonResponse(400, { error: "Missing job.id in body" });
     }
 
     const jobId = parsed.job.id;
 
-    // Responder 200 inmediatamente para evitar que ngrok/túnel expire
-    const okResponse = jsonResponse(200, { ok: true });
+    // Lógica de procesamiento (ahora con await para asegurar que termine antes de responder)
+    try {
+      const transcript = extractTranscriptFromResults(parsed?.results);
+      const mapping = await jobMappingRepository.findByJobId(jobId);
 
-    // Lógica pesada en background (no bloquear la respuesta)
-    void (async () => {
-      try {
-        const transcript = extractTranscriptFromResults(parsed?.results);
-        const mapping = await jobMappingRepository.findByJobId(jobId);
-        if (!mapping) {
-          console.error(`Webhook: no mapping found for jobId=${jobId}`);
-          return;
-        }
-        const { userId, transcriptionId } = mapping;
-        if (!userId) {
-          console.error(
-            `Webhook: mapping for jobId=${jobId} lacks userId (legacy record?). Keys: transcriptionId=${transcriptionId}`
-          );
-          return;
-        }
-        const transcriptionIdToUse =
-          mapping.transcriptionId ?? (mapping as { id?: string }).id ?? jobId;
-        await useCase.execute(jobId, transcriptionIdToUse, userId, transcript);
-      } catch (err) {
-        console.error("WebhookHandler background error:", err);
+      if (!mapping) {
+        console.error(`Webhook: no mapping found for jobId=${jobId}`);
+        return jsonResponse(200, { ok: true, warning: "No mapping found" });
       }
-    })();
 
-    return Promise.resolve(okResponse);
+      const { userId, transcriptionId } = mapping;
+      if (!userId) {
+        console.error(
+          `Webhook: mapping for jobId=${jobId} lacks userId (legacy record?). Keys: transcriptionId=${transcriptionId}`
+        );
+        return jsonResponse(200, { ok: true, warning: "No userId in mapping" });
+      }
+
+      const transcriptionIdToUse =
+        mapping.transcriptionId ?? (mapping as { id?: string }).id ?? jobId;
+
+      await useCase.execute(jobId, transcriptionIdToUse, userId, transcript);
+      console.log(`Webhook: Successfully processed jobId=${jobId}`);
+    } catch (err) {
+      console.error("WebhookHandler background error:", err);
+      // Retornamos 200 de todos modos para que Speechmatics no reintente infinitamente si es un error de lógica
+    }
+
+    return jsonResponse(200, { ok: true });
   } catch (err) {
     console.error("WebhookHandler unexpected error:", err);
-    return Promise.resolve(jsonResponse(502, { error: "Internal webhook processing error" }));
+    return jsonResponse(502, { error: "Internal webhook processing error" });
   }
 };

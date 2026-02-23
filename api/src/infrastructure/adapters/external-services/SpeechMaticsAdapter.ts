@@ -4,8 +4,7 @@ import type {
 } from "../../../application/ports/IExternalApiService";
 
 const SPEECHMATICS_BASE_URL =
-  process.env.SPEECHMATICS_BASE_URL ??
-  "https://eu1.asr.api.speechmatics.com/v2";
+  process.env.SPEECHMATICS_BASE_URL ?? "https://eu1.asr.api.speechmatics.com/v2";
 
 const SPEECHMATICS_MANAGEMENT_URL =
   process.env.SPEECHMATICS_MANAGEMENT_URL ?? "https://mp.speechmatics.com/v1";
@@ -34,12 +33,6 @@ interface SpeechmaticsTranscriptResponse {
   results?: SpeechmaticsTranscriptResult[];
 }
 
-/**
- * Speechmatics Batch API implementation of IExternalApiService.
- *
- * Uses the free tier at eu1.asr.api.speechmatics.com.
- * Requires SPEECHMATICS_API_KEY and optionally SPEECHMATICS_WEBHOOK_URL.
- */
 export class SpeechMaticsAdapter implements IExternalApiService {
   private readonly apiKey: string;
   private readonly baseUrl: string;
@@ -54,7 +47,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
   private async request<T>(
     method: string,
     path: string,
-    body?: FormData | null,
+    body?: FormData | null
   ): Promise<{ status: number; data: T }> {
     const url = `${this.baseUrl}${path}`;
     const init: RequestInit = {
@@ -74,25 +67,22 @@ export class SpeechMaticsAdapter implements IExternalApiService {
     return { status: response.status, data };
   }
 
-  async submitJob(
-    s3Url: string,
-    language: string = "en",
-  ): Promise<{ jobId: string }> {
+  async submitJob(s3Url: string, language: string = "en"): Promise<{ jobId: string }> {
     const config: Record<string, unknown> = {
       type: "transcription",
       transcription_config: { language },
       fetch_data: { url: s3Url },
     };
 
-    const webhookUrl =
-      "https://monologic-tayna-enumerably.ngrok-free.dev/webhook/speechmatics";
-    config.notification_config = [
-      {
-        url: webhookUrl,
-        contents: ["transcript"],
-        method: "post",
-      },
-    ];
+    if (this.webhookUrl) {
+      config.notification_config = [
+        {
+          url: this.webhookUrl,
+          contents: ["transcript"],
+          method: "post",
+        },
+      ];
+    }
 
     const formData = new FormData();
     formData.append("config", JSON.stringify(config));
@@ -101,13 +91,11 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       const { status, data } = await this.request<SpeechmaticsJobResponse>(
         "POST",
         "/jobs",
-        formData,
+        formData
       );
 
       if (status !== 201 || !data.id) {
-        throw new Error(
-          `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`,
-        );
+        throw new Error(`Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`);
       }
 
       return { jobId: data.id };
@@ -119,10 +107,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
   }
 
   async getJobStatus(jobId: string): Promise<JobStatus> {
-    const { data } = await this.request<SpeechmaticsJobStatusResponse>(
-      "GET",
-      `/jobs/${jobId}`,
-    );
+    const { data } = await this.request<SpeechmaticsJobStatusResponse>("GET", `/jobs/${jobId}`);
 
     const status = data.job?.status ?? "running";
     return this.normalizeStatus(status);
@@ -131,14 +116,13 @@ export class SpeechMaticsAdapter implements IExternalApiService {
   async getResult(jobId: string): Promise<{ transcript: string }> {
     const { data } = await this.request<SpeechmaticsTranscriptResponse>(
       "GET",
-      `/jobs/${jobId}/transcript`,
+      `/jobs/${jobId}/transcript`
     );
 
     const results = data.results ?? [];
     const transcript = results
       .filter(
-        (r: SpeechmaticsTranscriptResult) =>
-          r.type === "word" && r.alternatives?.[0]?.content,
+        (r: SpeechmaticsTranscriptResult) => r.type === "word" && r.alternatives?.[0]?.content
       )
       .map((r: SpeechmaticsTranscriptResult) => r.alternatives![0].content)
       .join(" ")
@@ -147,9 +131,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
     return { transcript };
   }
 
-  async createRealtimeToken(
-    ttl: number = 60,
-  ): Promise<{ token: string; wsUrl: string }> {
+  async createRealtimeToken(ttl: number = 60): Promise<{ token: string; wsUrl: string }> {
     const url = `${SPEECHMATICS_MANAGEMENT_URL}/api_keys?type=rt`;
     const response = await fetch(url, {
       method: "POST",
@@ -163,9 +145,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      throw new Error(
-        `Speechmatics realtime token creation failed: ${response.status} ${body}`,
-      );
+      throw new Error(`Speechmatics realtime token creation failed: ${response.status} ${body}`);
     }
 
     const tokenData = (await response.json()) as SpeechmaticsRealtimeTokenResponse;
