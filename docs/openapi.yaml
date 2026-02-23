@@ -1,0 +1,716 @@
+openapi: 3.0.3
+info:
+  title: Vocali API
+  description: API de transcripción de audio con soporte batch (archivo) y realtime. Autenticación via AWS Cognito.
+  version: 1.0.0
+
+servers:
+  - url: /{stage}
+    variables:
+      stage:
+        default: dev
+  - url: http://localhost:3001
+    description: Serverless offline (local)
+
+security:
+  - CognitoAuthorizer: []
+
+paths:
+  # =====================
+  # TEST
+  # =====================
+  /hello:
+    get:
+      summary: Health check / test
+      operationId: hello
+      tags: [Test]
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HelloResponse"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  # =====================
+  # AUTH
+  # =====================
+  /auth/register:
+    post:
+      summary: Registrar nuevo usuario
+      operationId: register
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Usuario registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validación fallida (email/password vacíos o contraseña débil)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Usuario ya existe con ese email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      operationId: login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Email o contraseña faltantes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /auth/logout:
+    post:
+      summary: Cerrar sesión
+      operationId: logout
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "200":
+          description: Cierre de sesión exitoso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  # =====================
+  # TRANSCRIPTIONS
+  # =====================
+  /transcriptions:
+    get:
+      summary: Listar transcripciones del usuario
+      operationId: listTranscriptions
+      tags: [Transcriptions]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        "200":
+          description: Lista paginada de transcripciones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptionListResponse"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/upload:
+    post:
+      summary: Iniciar subida de archivo de audio (presigned URL)
+      operationId: uploadTranscription
+      tags: [Transcriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadTranscriptionRequest"
+      responses:
+        "202":
+          description: URL presignada para subir el archivo a S3
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadTranscriptionResponse"
+        "400":
+          description: Validación fallida o tipo de archivo inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/{id}/confirm:
+    post:
+      summary: Confirmar subida e iniciar procesamiento batch
+      operationId: confirmUpload
+      tags: [Transcriptions]
+      parameters:
+        - $ref: "#/components/parameters/TranscriptionId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmUploadRequest"
+      responses:
+        "200":
+          description: Procesamiento iniciado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmUploadResponse"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/{id}:
+    delete:
+      summary: Eliminar una transcripción
+      operationId: deleteTranscription
+      tags: [Transcriptions]
+      parameters:
+        - $ref: "#/components/parameters/TranscriptionId"
+      responses:
+        "204":
+          description: Transcripción eliminada
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "403":
+          $ref: "#/components/responses/Error403"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/{id}/download:
+    get:
+      summary: Descargar transcripción completada (texto)
+      operationId: downloadTranscription
+      tags: [Transcriptions]
+      parameters:
+        - $ref: "#/components/parameters/TranscriptionId"
+      responses:
+        "200":
+          description: Contenido de texto (text/plain)
+          content:
+            text/plain:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              description: attachment; filename="nombre.txt"
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Error401"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "422":
+          description: Transcripción no lista para descargar (status != completed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/stats:
+    get:
+      summary: Obtener estadísticas de uso
+      operationId: getStats
+      tags: [Transcriptions]
+      responses:
+        "200":
+          description: Estadísticas de minutos transcritos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsResponse"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/realtime:
+    post:
+      summary: Crear sesión de transcripción en tiempo real
+      operationId: createRealtimeSession
+      tags: [Transcriptions]
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "200":
+          description: Token temporal para conexión WebSocket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeSessionResponse"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/realtime/token:
+    post:
+      summary: Obtener token para WebSocket de transcripción en tiempo real
+      operationId: getRealtimeToken
+      tags: [Transcriptions]
+      requestBody:
+        content:
+          application/json:
+            schema: {}
+      responses:
+        "200":
+          description: Token JWT temporal y URL WebSocket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealtimeTokenResponse"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+  /transcriptions/realtime/{id}/save:
+    post:
+      summary: Guardar transcripción de sesión realtime
+      operationId: saveRealtimeTranscription
+      tags: [Transcriptions]
+      parameters:
+        - $ref: "#/components/parameters/TranscriptionId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SaveRealtimeMultipartRequest"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveRealtimeJsonRequest"
+      responses:
+        "200":
+          description: Transcripción guardada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveRealtimeResponse"
+        "400":
+          $ref: "#/components/responses/Error400"
+        "401":
+          $ref: "#/components/responses/Error401"
+        "404":
+          $ref: "#/components/responses/Error404"
+        "500":
+          $ref: "#/components/responses/Error500"
+
+components:
+  securitySchemes:
+    CognitoAuthorizer:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: JWT Bearer Token (Cognito User Pool). Formato "Bearer &lt;idToken&gt;"
+      x-amazon-apigateway-authtype: cognito_user_pools
+
+  parameters:
+    TranscriptionId:
+      name: id
+      in: path
+      required: true
+      description: UUID v4 de la transcripción
+      schema:
+        type: string
+        format: uuid
+        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+
+  schemas:
+    # --- Test ---
+    HelloResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Hello from Vocali API!"
+        status:
+          type: string
+          enum: [success]
+
+    # --- Auth ---
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Correo electrónico del usuario
+        password:
+          type: string
+          minLength: 1
+          description: Contraseña en texto plano
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Correo electrónico del usuario
+        password:
+          type: string
+          minLength: 8
+          description: |
+            Contraseña. Requisitos (PasswordService):
+            - Mínimo 8 caracteres
+            - Al menos 1 mayúscula
+            - Al menos 1 minúscula
+            - Al menos 1 número
+            - Al menos 1 carácter especial (!@#$%^&*...)
+        confirmPassword:
+          type: string
+          description: Confirmación opcional
+
+    AuthResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: Identificador del usuario
+        email:
+          type: string
+          format: email
+        accessToken:
+          type: string
+          description: Token de acceso JWT
+        idToken:
+          type: string
+          description: Id Token (usar en Authorization para endpoints protegidos)
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Segundos hasta expiración del accessToken
+
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Cierre de sesión exitoso"
+
+    # --- Transcription ---
+    Transcription:
+      type: object
+      description: Entidad de transcripción
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        type:
+          type: string
+          enum: [batch, realtime]
+        duration:
+          type: number
+          description: Duración del audio en segundos
+        content:
+          type: string
+          description: Texto transcrito (solo si status=completed)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        audioUrl:
+          type: string
+          format: uri
+          description: URL temporal pre-firmada para reproducir el audio original. Solo disponible si status es completed.
+
+    TranscriptionListItem:
+      allOf:
+        - $ref: "#/components/schemas/Transcription"
+        - type: object
+          properties:
+            content:
+              description: Solo presente cuando status=completed
+
+    TranscriptionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TranscriptionListItem"
+        hasMore:
+          type: boolean
+        totalPages:
+          type: integer
+        currentPage:
+          type: integer
+
+    UploadTranscriptionRequest:
+      type: object
+      required: [fileName, fileSize]
+      properties:
+        fileName:
+          type: string
+          minLength: 1
+          description: Nombre original del archivo de audio
+        fileSize:
+          type: number
+          minimum: 0
+          maximum: 20971520
+          description: Tamaño en bytes (máx 20 MB)
+        contentType:
+          type: string
+          pattern: "^audio/.*"
+          description: MIME opcional. Si se envía, debe ser audio/* (audio/mp3, audio/ogg, audio/wav...)
+
+    UploadTranscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: transcriptionId
+        uploadUrl:
+          type: string
+          format: uri
+          description: URL presignada para PUT a S3
+        status:
+          type: string
+          enum: [pending]
+        expiresIn:
+          type: integer
+          description: Segundos hasta que expira la URL
+
+    ConfirmUploadRequest:
+      type: object
+      properties:
+        duration:
+          type: number
+          minimum: 0
+          description: Duración del audio en segundos (opcional)
+
+    ConfirmUploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [processing]
+
+    StatsResponse:
+      type: object
+      properties:
+        totalBatchSeconds:
+          type: number
+          description: Total segundos transcritos por batch
+        totalRealtimeSeconds:
+          type: number
+          description: Total segundos transcritos en tiempo real
+
+    RealtimeSessionResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT temporal para WebSocket
+        wsUrl:
+          type: string
+          format: uri
+          example: "wss://eu2.rt.speechmatics.com/v2/"
+        ttl:
+          type: integer
+          description: Tiempo de vida del token en segundos
+
+    RealtimeTokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        wsUrl:
+          type: string
+          format: uri
+        expiresIn:
+          type: integer
+
+    SaveRealtimeMultipartRequest:
+      type: object
+      required: [content, audioFile]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          description: Texto transcrito
+        fileName:
+          type: string
+          description: Nombre del archivo de audio (opcional)
+        audioFile:
+          type: string
+          format: binary
+          description: Archivo de audio (audio/webm, audio/wav, etc.)
+
+    SaveRealtimeJsonRequest:
+      type: object
+      required: [content, audioBase64]
+      properties:
+        content:
+          type: string
+          minLength: 1
+        fileName:
+          type: string
+        audioBase64:
+          type: string
+          format: byte
+          description: Audio codificado en base64 (ej. audio/webm)
+        duration:
+          type: number
+          minimum: 0
+
+    SaveRealtimeResponse:
+      type: object
+      properties:
+        transcriptionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [completed]
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - UNAUTHORIZED
+            - INVALID_CREDENTIALS
+            - INVALID_FILE_TYPE
+            - FILE_TOO_LARGE
+            - NOT_FOUND
+            - FORBIDDEN
+            - TRANSCRIPTION_NOT_READY
+            - INTERNAL_SERVER_ERROR
+        message:
+          type: string
+
+  responses:
+    Error400:
+      description: Bad Request - Validación fallida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: VALIDATION_ERROR
+            message: "transcriptionId tiene formato inválido"
+    Error401:
+      description: Unauthorized - Token faltante o inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: UNAUTHORIZED
+            message: "Falta el header de autorización"
+    Error403:
+      description: Forbidden - Sin permisos para el recurso
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Error404:
+      description: Not Found - Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: NOT_FOUND
+            message: "Transcripción no encontrada"
+    Error500:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: "Error interno del servidor"
+
+tags:
+  - name: Test
+    description: Endpoints de prueba
+  - name: Auth
+    description: Registro, login y logout
+  - name: Transcriptions
+    description: Transcripción batch y en tiempo real
