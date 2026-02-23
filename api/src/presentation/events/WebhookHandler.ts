@@ -53,7 +53,11 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
     const hdrs = event.headers ?? {};
     const signature = hdrs["X-Webhook-Signature"] ?? hdrs["x-webhook-signature"];
 
-    // Solo validar si el secreto existe Y la firma viene en la cabecera
+    // Si el secreto está configurado, la firma es obligatoria
+    if (webhookSecret && !signature) {
+      return jsonResponse(401, { error: "Missing webhook signature" });
+    }
+
     if (webhookSecret && signature) {
       const sig = signature.startsWith("sha256=") ? signature.slice(7) : signature;
       if (!verifyWebhookSignature(event.body, sig, webhookSecret)) {
