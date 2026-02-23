@@ -204,13 +204,17 @@ functions:
           path: webhook/speechmatics
           method: post
 
+build:
+  esbuild:
+    bundle: true
+    # Incluir @aws-sdk y bcryptjs en el bundle (no excluirlos)
+    exclude: []
+    minify: false
+
 package:
   patterns:
     - "dist/**"
     - "!src/**"
-
-build:
-  esbuild: true
 
 plugins:
   - serverless-offline
