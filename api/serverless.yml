@@ -327,6 +327,14 @@ resources:
       Properties:
         ClientName: vocali-app-client-${self:provider.stage}
         UserPoolId: !Ref CognitoUserPool
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthFlows:
+          - code
+          - implicit
+        AllowedOAuthScopes:
+          - email
+          - openid
+          - profile
         ExplicitAuthFlows:
           - ALLOW_USER_PASSWORD_AUTH
           - ALLOW_REFRESH_TOKEN_AUTH
@@ -336,12 +344,6 @@ resources:
           RefreshToken: days
         AccessTokenValidity: 1
         RefreshTokenValidity: 30
-        # Sin openid, Cognito no genera IdToken en USER_PASSWORD_AUTH (requerido por API Gateway Authorizer)
-        AllowedOAuthFlowsUserPoolClient: true
-        AllowedOAuthScopes:
-          - email
-          - openid
-          - profile
 
     # CORS en respuestas 4XX del authorizer (401 sin esto puede fallar en cross-origin)
     GatewayResponseDefault4XX:
@@ -382,9 +384,9 @@ custom:
     identitySource: method.request.header.Authorization
   # COGNITO_AUTO_CONFIRM por stage (prod: verificación email; dev: auto-confirm)
   cognitoAutoConfirmByStage:
-    prod: 'true'
-    dev: 'true'
-    local: 'true'
+    prod: "true"
+    dev: "true"
+    local: "true"
   dotenv:
     exclude:
       - AWS_ACCESS_KEY_ID
