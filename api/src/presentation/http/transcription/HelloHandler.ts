@@ -1,7 +1,7 @@
 import type { APIGatewayProxyHandler, APIGatewayProxyResult } from "aws-lambda";
 
-export const handler: APIGatewayProxyHandler = (): APIGatewayProxyResult => {
-  return {
+export const handler: APIGatewayProxyHandler = (): Promise<APIGatewayProxyResult> => {
+  return Promise.resolve({
     statusCode: 200,
     headers: {
       "Content-Type": "application/json",
@@ -11,5 +11,5 @@ export const handler: APIGatewayProxyHandler = (): APIGatewayProxyResult => {
       message: "Hello from Vocali API!",
       status: "success",
     }),
-  };
+  });
 };
