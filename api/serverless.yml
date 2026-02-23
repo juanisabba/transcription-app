@@ -57,6 +57,7 @@ provider:
     SPEECHMATICS_API_KEY: ${env:SPEECHMATICS_API_KEY, ''}
     SPEECHMATICS_WEBHOOK_URL: ${env:SPEECHMATICS_WEBHOOK_URL, ''}
     SPEECHMATICS_WEBHOOK_SECRET: ${env:SPEECHMATICS_WEBHOOK_SECRET, ''}
+    SPEECHMATICS_BASE_URL: ${env:SPEECHMATICS_BASE_URL, 'https://eu1.asr.api.speechmatics.com/v2'}
     SPEECHMATICS_MANAGEMENT_URL: ${env:SPEECHMATICS_MANAGEMENT_URL, 'https://mp.speechmatics.com/v1'}
     SPEECHMATICS_RT_WS_URL: ${env:SPEECHMATICS_RT_WS_URL, 'wss://eu2.rt.speechmatics.com/v2/'}
     COGNITO_USER_POOL_ID: !Ref CognitoUserPool
@@ -251,6 +252,8 @@ resources:
             AttributeType: S
           - AttributeName: status
             AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
@@ -261,6 +264,14 @@ resources:
             KeySchema:
               - AttributeName: status
                 KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: createdAt-index
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
             Projection:
               ProjectionType: ALL
 
