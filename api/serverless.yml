@@ -60,8 +60,8 @@ provider:
     SPEECHMATICS_BASE_URL: ${env:SPEECHMATICS_BASE_URL, 'https://eu1.asr.api.speechmatics.com/v2'}
     SPEECHMATICS_MANAGEMENT_URL: ${env:SPEECHMATICS_MANAGEMENT_URL, 'https://mp.speechmatics.com/v1'}
     SPEECHMATICS_RT_WS_URL: ${env:SPEECHMATICS_RT_WS_URL, 'wss://eu2.rt.speechmatics.com/v2/'}
-    COGNITO_USER_POOL_ID: !Ref CognitoUserPool
-    COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+    COGNITO_USER_POOL_ID: ${self:custom.cognitoUserPoolId.${self:provider.stage}, self:custom.cognitoUserPoolId.default}
+    COGNITO_CLIENT_ID: ${self:custom.cognitoClientId.${self:provider.stage}, self:custom.cognitoClientId.default}
     COGNITO_AUTO_CONFIRM: ${self:custom.cognitoAutoConfirmByStage.${self:provider.stage}, 'false'}
 
 functions:
@@ -313,26 +313,14 @@ resources:
           IgnorePublicAcls: true
           RestrictPublicBuckets: true
 
-    CognitoPreSignUpPermission:
-      Type: AWS::Lambda::Permission
-      Properties:
-        FunctionName: !Ref CognitoPreSignUpLambdaFunction
-        Action: lambda:InvokeFunction
-        Principal: cognito-idp.amazonaws.com
-        SourceArn: !GetAtt CognitoUserPool.Arn
-      DependsOn: CognitoUserPool
-
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
-      DependsOn: CognitoPreSignUpLambdaFunction
       Properties:
         UserPoolName: vocali-users-${self:provider.stage}
         UsernameAttributes:
           - email
         AutoVerifiedAttributes:
           - email
-        LambdaConfig:
-          PreSignUp: !GetAtt CognitoPreSignUpLambdaFunction.Arn
         Policies:
           PasswordPolicy:
             MinimumLength: 8
@@ -420,9 +408,15 @@ resources:
 
 custom:
   cognitoUserPoolArn:
-    prod: "arn:aws:cognito-idp:eu-north-1:273386478728:userpool/eu-north-1_5WlAlQQHu"
+    prod: "arn:aws:cognito-idp:eu-north-1:273386478728:userpool/eu-north-1_b26FB6sIB"
     dev: !GetAtt CognitoUserPool.Arn
     default: !GetAtt CognitoUserPool.Arn
+  cognitoUserPoolId:
+    prod: "eu-north-1_b26FB6sIB"
+    default: !Ref CognitoUserPool
+  cognitoClientId:
+    prod: "1l72utd99e53tbo8mhcn0kr5qp"
+    default: !Ref CognitoUserPoolClient
   cognitoAuthorizer:
     name: MyCognitoAuth
     type: COGNITO_USER_POOLS

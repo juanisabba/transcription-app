@@ -7,13 +7,11 @@ export default defineNuxtRouteMiddleware((to, from) => {
 
   authStore.restore();
 
-  // Rutas protegidas
-  const protectedRoutes = ["/transcribe", "/history"];
-  const isProtected = protectedRoutes.some((route) =>
-    to.path.startsWith(route),
-  );
+  // Rutas públicas (accesibles sin autenticación)
+  const publicPaths = ["/", "/auth/login", "/auth/register"];
+  const isPublic = publicPaths.includes(to.path);
 
-  if (isProtected && !authStore.isAuthenticated) {
+  if (!authStore.isAuthenticated && !isPublic) {
     return navigateTo("/auth/login");
   }
 
