@@ -210,8 +210,16 @@ package:
     - "!**"
     - "src/**"
 
+build:
+  esbuild:
+    bundle: true
+    packages: bundle
+    minify: false
+    platform: node
+    target: node18
+    exclude: []
+
 plugins:
-  - serverless-esbuild
   - serverless-offline
   - serverless-dynamodb-local
   - serverless-dotenv-plugin
@@ -378,12 +386,6 @@ resources:
       Value: !Ref CognitoUserPoolClient
 
 custom:
-  esbuild:
-    bundle: true
-    minify: false
-    platform: node
-    target: node18
-    exclude: []
   cognitoUserPoolArn:
     prod: "arn:aws:cognito-idp:eu-north-1:273386478728:userpool/eu-north-1_5WlAlQQHu"
     dev: !GetAtt CognitoUserPool.Arn
