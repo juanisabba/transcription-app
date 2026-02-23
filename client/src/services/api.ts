@@ -23,6 +23,11 @@ api.interceptors.request.use((reqConfig) => {
   if (token) {
     reqConfig.headers.Authorization = `Bearer ${token}`;
   }
+  // En local (serverless-offline): fallback X-User-Id cuando el authorizer no inyecta claims
+  const isLocalApi = config.public.apiUrl?.includes("localhost");
+  if (isLocalApi && authStore.user?.userId) {
+    reqConfig.headers["X-User-Id"] = authStore.user.userId;
+  }
   if (reqConfig.data instanceof FormData) {
     delete reqConfig.headers["Content-Type"];
   }

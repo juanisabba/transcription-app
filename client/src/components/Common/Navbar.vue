@@ -106,7 +106,6 @@
 
 <script setup lang="ts">
 import { useAuth } from "../../composables/useAuth";
-import { onClickOutside } from "@vueuse/core";
 
 const route = useRoute();
 const authStore = useAuthStore();

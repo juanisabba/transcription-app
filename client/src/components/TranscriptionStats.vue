@@ -65,8 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import type { TranscriptionStatsResponse } from "~/types/transcription.types";
-import { formatDuration } from "~/utils/format";
+import type { TranscriptionStatsResponse } from "@/types/transcription.types";
+import { formatDuration } from "@/utils/format";
 
 const { getStats } = useTranscription();
 const stats = ref<TranscriptionStatsResponse | null>(null);

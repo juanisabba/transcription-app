@@ -39,9 +39,7 @@ export const useAuth = () => {
       await router.push("/");
     } catch (error: unknown) {
       console.error("Error en registro:", error);
-      uiStore.setError(
-        getApiErrorMessage(error, "Error al registrarse"),
-      );
+      uiStore.setError(getApiErrorMessage(error, "Error al registrarse"));
     } finally {
       uiStore.setLoading(false);
     }

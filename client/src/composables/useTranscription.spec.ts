@@ -51,7 +51,7 @@ describe("useTranscription", () => {
       fileSize: 1024,
     });
     expect(transcriptionStore.displayItems).toHaveLength(1);
-    expect(transcriptionStore.displayItems[0].fileName).toBe("audio.mp3");
+    expect(transcriptionStore.displayItems[0]!.fileName).toBe("audio.mp3");
     expect(uiStore.successMessage).toBe("Transcripción iniciada");
   });
 
@@ -63,7 +63,9 @@ describe("useTranscription", () => {
     const { upload } = useTranscription();
     const uiStore = useUiStore();
 
-    await expect(upload({ fileName: "big.mp3", fileSize: 999999 })).rejects.toThrow();
+    await expect(
+      upload({ fileName: "big.mp3", fileSize: 999999 }),
+    ).rejects.toThrow();
     expect(uiStore.error).toBe("Archivo muy grande");
   });
 
@@ -88,9 +90,12 @@ describe("useTranscription", () => {
 
     await list(1);
 
-    expect(transcriptionService.list).toHaveBeenCalledWith(mockApi, { page: 1, pageSize: 10 });
+    expect(transcriptionService.list).toHaveBeenCalledWith(mockApi, {
+      page: 1,
+      pageSize: 10,
+    });
     expect(transcriptionStore.transcriptions).toHaveLength(1);
-    expect(transcriptionStore.transcriptions[0].id).toBe("t1");
+    expect(transcriptionStore.transcriptions[0]!.id).toBe("t1");
   });
 
   it("remove elimina del store y muestra éxito", async () => {
@@ -131,11 +136,16 @@ describe("useTranscription", () => {
 
     const stats = await getStats();
 
-    expect(stats).toEqual({ totalBatchSeconds: 300, totalRealtimeSeconds: 120 });
+    expect(stats).toEqual({
+      totalBatchSeconds: 300,
+      totalRealtimeSeconds: 120,
+    });
   });
 
   it("saveRealtime añade transcripción al store en éxito", async () => {
-    vi.mocked(transcriptionService.saveRealtimeTranscription).mockResolvedValue(undefined);
+    vi.mocked(transcriptionService.saveRealtimeTranscription).mockResolvedValue(
+      undefined,
+    );
 
     const { saveRealtime } = useTranscription();
     const transcriptionStore = useTranscriptionStore();
@@ -150,11 +160,11 @@ describe("useTranscription", () => {
       "Texto transcrito",
       blob,
       "realtime.mp3",
-      90
+      90,
     );
     expect(transcriptionStore.displayItems).toHaveLength(1);
-    expect(transcriptionStore.displayItems[0].status).toBe("completed");
-    expect(transcriptionStore.displayItems[0].type).toBe("realtime");
+    expect(transcriptionStore.displayItems[0]!.status).toBe("completed");
+    expect(transcriptionStore.displayItems[0]!.type).toBe("realtime");
     expect(uiStore.successMessage).toBe("Transcripción guardada");
   });
 });

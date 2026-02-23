@@ -279,8 +279,8 @@
 </template>
 
 <script setup lang="ts">
-import { TRANSCRIPTION_STATUS_LABELS } from "~/types/transcription.types";
-import { formatDuration } from "~/utils/format";
+import { TRANSCRIPTION_STATUS_LABELS } from "@/types/transcription.types";
+import { formatDuration } from "@/utils/format";
 
 const route = useRoute();
 const router = useRouter();

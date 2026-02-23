@@ -3,7 +3,9 @@ import { setActivePinia, createPinia } from "pinia";
 import { useTranscriptionStore } from "./transcription.store";
 import type { Transcription } from "../types/transcription.types";
 
-const mockTranscription = (overrides: Partial<Transcription> = {}): Transcription => ({
+const mockTranscription = (
+  overrides: Partial<Transcription> = {},
+): Transcription => ({
   id: "t1",
   fileName: "audio.mp3",
   status: "completed",
@@ -28,7 +30,10 @@ describe("transcription.store", () => {
 
   it("setTranscriptions actualiza items y paginación", () => {
     const store = useTranscriptionStore();
-    const items = [mockTranscription({ id: "1" }), mockTranscription({ id: "2" })];
+    const items = [
+      mockTranscription({ id: "1" }),
+      mockTranscription({ id: "2" }),
+    ];
 
     store.setTranscriptions({
       items,
@@ -56,7 +61,7 @@ describe("transcription.store", () => {
     store.addTranscription(mockTranscription({ id: "new-1" }));
 
     expect(store.displayItems).toHaveLength(1);
-    expect(store.displayItems[0].id).toBe("new-1");
+    expect(store.displayItems[0]!.id).toBe("new-1");
   });
 
   it("removeTranscription elimina de transcriptions y prependItems", () => {
@@ -71,7 +76,7 @@ describe("transcription.store", () => {
     store.removeTranscription("1");
 
     expect(store.transcriptions).toHaveLength(1);
-    expect(store.transcriptions[0].id).toBe("2");
+    expect(store.transcriptions[0]!.id).toBe("2");
   });
 
   it("updateTranscription actualiza un item existente", () => {
@@ -85,7 +90,7 @@ describe("transcription.store", () => {
 
     store.updateTranscription("1", { status: "completed" });
 
-    expect(store.transcriptions[0].status).toBe("completed");
+    expect(store.transcriptions[0]!.status).toBe("completed");
   });
 
   it("clear resetea todo el estado", () => {

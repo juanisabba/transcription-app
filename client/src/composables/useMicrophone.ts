@@ -6,17 +6,17 @@
  * Speechmatics devuelve resultados parciales y finales en tiempo real.
  */
 
-import { ref, readonly, onScopeDispose } from 'vue';
-import { transcriptionService } from '../services/transcription.service';
-import { useApi } from './useApi';
+import { ref, readonly, onScopeDispose } from "vue";
+import { transcriptionService } from "../services/transcription.service";
+import { useApi } from "./useApi";
 
 /** Formato de mensaje AddPartialTranscript / AddTranscript de Speechmatics */
 interface SpeechmaticsTranscriptMessage {
-  message: 'AddPartialTranscript' | 'AddTranscript';
+  message: "AddPartialTranscript" | "AddTranscript";
   transcript?: string;
   results?: Array<{
     type: string;
-    alternatives?: Array< { content: string } >;
+    alternatives?: Array<{ content: string }>;
   }>;
 }
 
@@ -28,16 +28,13 @@ export interface UseMicrophoneOptions {
 }
 
 export function useMicrophone(options: UseMicrophoneOptions = {}) {
-  const {
-    language = 'es',
-    enablePartials = true,
-  } = options;
+  const { language = "es", enablePartials = true } = options;
 
   // Estado público
   const isRecording = ref(false);
   const isPaused = ref(false);
-  const transcript = ref('');
-  const error = ref('');
+  const transcript = ref("");
+  const error = ref("");
   const isConnected = ref(false);
   const transcriptionId = ref<string | null>(null);
   const recordingStartedAt = ref<number | null>(null);
@@ -46,8 +43,8 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
   const recordedAudioBlob = ref<Blob | null>(null);
 
   // Estado interno para acumular final + parcial
-  let finalTranscript = '';
-  let lastPartial = '';
+  let finalTranscript = "";
+  let lastPartial = "";
 
   // Estado interno
   let audioContext: AudioContext | null = null;
@@ -89,34 +86,38 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
 
       const timeout = setTimeout(() => {
         if (!recognitionStarted) {
-          disconnect('Timeout esperando RecognitionStarted');
-          settle(() => reject(new Error('Timeout al conectar con Speechmatics')));
+          disconnect("Timeout esperando RecognitionStarted");
+          settle(() =>
+            reject(new Error("Timeout al conectar con Speechmatics")),
+          );
         }
       }, 10000);
 
       ws!.onopen = () => {
         isConnected.value = true;
-        error.value = '';
+        error.value = "";
 
-        ws!.send(JSON.stringify({
-          message: 'StartRecognition',
-          audio_format: {
-            type: 'raw',
-            encoding: 'pcm_s16le',
-            sample_rate: sampleRate,
-          },
-          transcription_config: {
-            language,
-            enable_partials: enablePartials,
-          },
-        }));
+        ws!.send(
+          JSON.stringify({
+            message: "StartRecognition",
+            audio_format: {
+              type: "raw",
+              encoding: "pcm_s16le",
+              sample_rate: sampleRate,
+            },
+            transcription_config: {
+              language,
+              enable_partials: enablePartials,
+            },
+          }),
+        );
       };
 
       ws!.onmessage = (event) => {
-        if (typeof event.data === 'string') {
+        if (typeof event.data === "string") {
           onTranscriptionResult(event.data);
           const parsed = JSON.parse(event.data);
-          if (parsed.message === 'RecognitionStarted') {
+          if (parsed.message === "RecognitionStarted") {
             recognitionStarted = true;
             connectedSuccessfully = true;
             clearTimeout(timeout);
@@ -129,15 +130,15 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
 
       ws!.onerror = () => {
         clearTimeout(timeout);
-        error.value = 'Error de conexión WebSocket';
+        error.value = "Error de conexión WebSocket";
         disconnect();
-        settle(() => reject(new Error('Error de conexión WebSocket')));
+        settle(() => reject(new Error("Error de conexión WebSocket")));
       };
 
       ws!.onclose = (event) => {
         clearTimeout(timeout);
         if (!connectedSuccessfully) {
-          if (error.value === '') {
+          if (error.value === "") {
             error.value = event.reason || `Conexión cerrada: ${event.code}`;
           }
           disconnect();
@@ -150,16 +151,23 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
   function onTranscriptionResult(json: string): void {
     try {
       const msg = JSON.parse(json) as SpeechmaticsTranscriptMessage;
-      if (msg.message === 'AddPartialTranscript' || msg.message === 'AddTranscript') {
+      if (
+        msg.message === "AddPartialTranscript" ||
+        msg.message === "AddTranscript"
+      ) {
         const text = msg.transcript ?? buildTranscriptFromResults(msg.results);
         if (text) {
-          if (msg.message === 'AddTranscript') {
-            finalTranscript = finalTranscript ? `${finalTranscript} ${text}`.trim() : text;
-            lastPartial = '';
+          if (msg.message === "AddTranscript") {
+            finalTranscript = finalTranscript
+              ? `${finalTranscript} ${text}`.trim()
+              : text;
+            lastPartial = "";
           } else {
             lastPartial = text;
           }
-          transcript.value = finalTranscript ? `${finalTranscript} ${lastPartial}`.trim() : lastPartial;
+          transcript.value = finalTranscript
+            ? `${finalTranscript} ${lastPartial}`.trim()
+            : lastPartial;
         }
       }
     } catch {
@@ -167,12 +175,16 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
     }
   }
 
-  function buildTranscriptFromResults(results?: SpeechmaticsTranscriptMessage['results']): string {
-    if (!results?.length) return '';
+  function buildTranscriptFromResults(
+    results?: SpeechmaticsTranscriptMessage["results"],
+  ): string {
+    if (!results?.length) return "";
     return results
-      .filter((r) => r.alternatives?.[0]?.content)
-      .map((r) => r.alternatives![0].content)
-      .join(' ');
+      .filter((r): r is typeof r & { alternatives: [{ content: string }] } =>
+        Boolean(r.alternatives?.[0]?.content),
+      )
+      .map((r) => r.alternatives[0].content)
+      .join(" ");
   }
 
   function sendAudioChunk(pcmData: ArrayBuffer): void {
@@ -188,7 +200,9 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
     }
     if (ws) {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ message: 'EndOfStream', last_seq_no: lastSeqNo }));
+        ws.send(
+          JSON.stringify({ message: "EndOfStream", last_seq_no: lastSeqNo }),
+        );
       }
       ws.close();
       ws = null;
@@ -198,21 +212,23 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
   }
 
   async function startRecording(): Promise<void> {
-    error.value = '';
-    transcript.value = '';
-    finalTranscript = '';
-    lastPartial = '';
+    error.value = "";
+    transcript.value = "";
+    finalTranscript = "";
+    lastPartial = "";
 
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error desconocido';
-      if (msg.includes('Permission') || msg.includes('permission')) {
-        error.value = 'Permiso de micrófono denegado. Permite el acceso al micrófono en la configuración del navegador.';
-      } else if (msg.includes('NotFound') || msg.includes('not found')) {
-        error.value = 'No se encontró ningún micrófono. Conecta un micrófono e inténtalo de nuevo.';
-      } else if (msg.includes('NotAllowed') || msg.includes('denied')) {
-        error.value = 'El acceso al micrófono fue denegado.';
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      if (msg.includes("Permission") || msg.includes("permission")) {
+        error.value =
+          "Permiso de micrófono denegado. Permite el acceso al micrófono en la configuración del navegador.";
+      } else if (msg.includes("NotFound") || msg.includes("not found")) {
+        error.value =
+          "No se encontró ningún micrófono. Conecta un micrófono e inténtalo de nuevo.";
+      } else if (msg.includes("NotAllowed") || msg.includes("denied")) {
+        error.value = "El acceso al micrófono fue denegado.";
       } else {
         error.value = `Error al acceder al micrófono: ${msg}`;
       }
@@ -231,9 +247,9 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
     }
 
     audioChunks.length = 0;
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : 'audio/webm';
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : "audio/webm";
     mediaRecorder = new MediaRecorder(mediaStream, { mimeType });
     mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) audioChunks.push(e.data);
@@ -249,10 +265,10 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
       const input = e.inputBuffer.getChannelData(0);
       if (!isPaused.value) {
         const pcm16 = float32ToPcm16(input);
-        sendAudioChunk(pcm16.buffer);
+        sendAudioChunk(pcm16.buffer as ArrayBuffer);
       }
       const rms = Math.sqrt(
-        input.reduce((sum, s) => sum + s * s, 0) / input.length
+        input.reduce((sum, s) => sum + s * s, 0) / input.length,
       );
       audioLevel.value = Math.min(100, Math.round(rms * 400));
     };
@@ -267,7 +283,7 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
     durationInterval = setInterval(() => {
       if (recordingStartedAt.value && isRecording.value) {
         durationSeconds.value = Math.floor(
-          (Date.now() - recordingStartedAt.value) / 1000
+          (Date.now() - recordingStartedAt.value) / 1000,
         );
       }
     }, 1000);
@@ -276,7 +292,7 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
   function float32ToPcm16(float32: Float32Array): Int16Array {
     const pcm16 = new Int16Array(float32.length);
     for (let i = 0; i < float32.length; i++) {
-      const s = Math.max(-1, Math.min(1, float32[i]));
+      const s = Math.max(-1, Math.min(1, float32[i] ?? 0));
       pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
     }
     return pcm16;
@@ -313,7 +329,7 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
         resolve();
       };
 
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.onstop = () => {
           if (recordingStartedAt.value) {
             durationSeconds.value = Math.floor(
@@ -321,7 +337,11 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
             );
           }
           recordedAudioBlob.value =
-            audioChunks.length > 0 ? new Blob(audioChunks, { type: mediaRecorder?.mimeType || 'audio/webm' }) : null;
+            audioChunks.length > 0
+              ? new Blob(audioChunks, {
+                  type: mediaRecorder?.mimeType || "audio/webm",
+                })
+              : null;
           mediaRecorder = null;
           doCleanup();
         };
@@ -351,14 +371,14 @@ export function useMicrophone(options: UseMicrophoneOptions = {}) {
    * para una nueva grabación.
    */
   function resetSession(): void {
-    transcript.value = '';
+    transcript.value = "";
     transcriptionId.value = null;
     durationSeconds.value = 0;
     recordedAudioBlob.value = null;
     recordingStartedAt.value = null;
-    finalTranscript = '';
-    lastPartial = '';
-    error.value = '';
+    finalTranscript = "";
+    lastPartial = "";
+    error.value = "";
   }
 
   return {
