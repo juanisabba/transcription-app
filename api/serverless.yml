@@ -213,11 +213,11 @@ package:
 build:
   esbuild:
     bundle: true
-    packages: bundle
+    packages: external
     minify: false
     platform: node
     target: node18
-    exclude: []
+    external: []
 
 plugins:
   - serverless-offline
