@@ -1,4 +1,4 @@
-import type { IAuthService } from "../../src/application/ports/IAuthService";
+import type { IAuthService } from "../../api/src/application/ports/IAuthService";
 
 export const createMockAuthService = (): jest.Mocked<IAuthService> => {
   return {

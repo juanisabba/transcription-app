@@ -19,7 +19,9 @@ const useCase = new UploadTranscriptionUseCase(transcriptionRepository, storageS
 
 function getBearerToken(event: { headers?: Record<string, string | undefined> }): string | null {
   const auth = event.headers?.Authorization ?? event.headers?.authorization ?? "";
-  if (!auth.startsWith("Bearer ")) return null;
+  if (!auth.startsWith("Bearer ")) {
+    return null;
+  }
   const token = auth.slice(7).trim();
   return token || null;
 }
@@ -48,12 +50,12 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         statusCode: 400,
         body: JSON.stringify({
           code: "VALIDATION_ERROR",
-          message:
-            fileSize < 0
-              ? "fileSize no puede ser negativo"
-              : fileSize > 20_971_520
-                ? "fileSize excede el límite de 20 MB"
-                : "fileSize debe ser un número válido",
+      message:
+        fileSize < 0
+          ? "fileSize no puede ser negativo"
+          : fileSize > 20_971_520
+            ? "fileSize excede el límite de 20 MB"
+            : "fileSize debe ser un número válido",
         }),
         headers: corsHeaders,
       };
@@ -88,7 +90,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         statusCode: 400,
         body: JSON.stringify({
           code: "INVALID_FILE_TYPE",
-          message: (error as Error).message,
+          message: error.message,
         }),
         headers: corsHeaders,
       };

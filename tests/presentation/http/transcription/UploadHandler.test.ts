@@ -2,31 +2,39 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 
 const mockValidateToken = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance", () => ({
-  transcriptionRepository: {
-    save: jest.fn().mockResolvedValue(undefined),
-    findById: jest.fn(),
-    findByUserId: jest.fn(),
-    update: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance",
+  () => ({
+    transcriptionRepository: {
+      save: jest.fn().mockResolvedValue(undefined),
+      findById: jest.fn(),
+      findByUserId: jest.fn(),
+      update: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../api/src/infrastructure/adapters/storage/storageServiceInstance", () => ({
-  storageService: {
-    generatePresignedUrl: jest.fn().mockResolvedValue("https://s3.example.com/presigned"),
-    generateDownloadPresignedUrl: jest.fn(),
-    deleteFile: jest.fn(),
-    getFile: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/adapters/storage/storageServiceInstance",
+  () => ({
+    storageService: {
+      generatePresignedUrl: jest
+        .fn()
+        .mockResolvedValue("https://s3.example.com/presigned"),
+      generateDownloadPresignedUrl: jest.fn(),
+      deleteFile: jest.fn(),
+      getFile: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/UploadHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/UploadHandler";
 
 describe("UploadHandler", () => {
   beforeEach(() => {
@@ -36,7 +44,7 @@ describe("UploadHandler", () => {
 
   const createEvent = (
     body: Record<string, unknown>,
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ): APIGatewayProxyEvent =>
     ({
       body: JSON.stringify(body),
@@ -88,7 +96,7 @@ describe("UploadHandler", () => {
   it("returns 401 when Authorization header is missing", async () => {
     const event = createEvent(
       { fileName: "audio.mp3", fileSize: 1024 },
-      { Authorization: "" }
+      { Authorization: "" },
     );
     (event.headers as Record<string, string>).Authorization = "";
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;

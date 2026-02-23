@@ -18,13 +18,13 @@ jest.mock("../../../api/src/infrastructure/adapters/storage/storageServiceInstan
   storageService: { generatePresignedUrl: jest.fn(), getFile: jest.fn(), deleteFile: jest.fn() },
 }));
 
-jest.mock("../../../src/application/use-cases/transcription/StartTranscriptionUseCase", () => ({
+jest.mock("../../../api/src/application/use-cases/transcription/StartTranscriptionUseCase", () => ({
   StartTranscriptionUseCase: jest.fn().mockImplementation(() => ({
     execute: mockExecute,
   })),
 }));
 
-import { handler } from "../../../src/presentation/events/S3UploadHandler";
+import { handler } from "../../../api/src/presentation/events/S3UploadHandler";
 
 describe("S3UploadHandler", () => {
   beforeEach(() => {

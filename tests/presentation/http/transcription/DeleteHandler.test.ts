@@ -13,7 +13,7 @@ jest.mock(
       update: jest.fn(),
       delete: jest.fn(),
     },
-  })
+  }),
 );
 
 jest.mock(
@@ -25,22 +25,25 @@ jest.mock(
       deleteFile: jest.fn(),
       getFile: jest.fn(),
     },
-  })
+  }),
 );
 
-jest.mock("../../../../src/application/use-cases/transcription/DeleteTranscriptionUseCase", () => ({
-  DeleteTranscriptionUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/DeleteTranscriptionUseCase",
+  () => ({
+    DeleteTranscriptionUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/DeleteHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/DeleteHandler";
 
 describe("DeleteHandler", () => {
   beforeEach(() => {
@@ -51,7 +54,7 @@ describe("DeleteHandler", () => {
 
   const createEvent = (
     pathParams: Record<string, string> | null,
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ): APIGatewayProxyEvent =>
     ({
       body: null,
@@ -76,11 +79,17 @@ describe("DeleteHandler", () => {
     expect(result).toBeDefined();
     expect(result!.statusCode).toBe(204);
     expect(result!.body).toBe("");
-    expect(mockExecute).toHaveBeenCalledWith("user-123", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d");
+    expect(mockExecute).toHaveBeenCalledWith(
+      "user-123",
+      "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    );
   });
 
   it("returns 401 when Authorization header is missing", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, { Authorization: "" });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      { Authorization: "" },
+    );
     (event.headers as Record<string, string>).Authorization = "";
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
@@ -110,8 +119,13 @@ describe("DeleteHandler", () => {
   });
 
   it("returns 404 when transcription not found", async () => {
-    const { NotFoundError } = await import("../../../../src/shared/errors");
-    mockExecute.mockRejectedValue(new NotFoundError("Transcripción", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"));
+    const { NotFoundError } = await import("../../../../api/src/shared/errors");
+    mockExecute.mockRejectedValue(
+      new NotFoundError(
+        "Transcripción",
+        "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      ),
+    );
     const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" });
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});

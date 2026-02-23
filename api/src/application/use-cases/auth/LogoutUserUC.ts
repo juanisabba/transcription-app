@@ -18,9 +18,9 @@ export class LogoutUserUC {
    * @param userId - Identifier of the user performing logout.
    * @returns A promise that resolves when the operation completes.
    */
-  async execute(userId: string): Promise<void> {
+  execute(_userId: string): Promise<void> {
     // JWT tokens are stateless. Logout is handled client-side by removing token from localStorage
     // Placeholder: we may log or persist logout events in the future.
-    return;
+    return Promise.resolve();
   }
 }

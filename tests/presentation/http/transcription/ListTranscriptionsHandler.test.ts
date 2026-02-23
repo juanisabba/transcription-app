@@ -13,22 +13,25 @@ jest.mock(
       update: jest.fn(),
       delete: jest.fn(),
     },
-  })
+  }),
 );
 
-jest.mock("../../../../src/application/use-cases/transcription/ListTranscriptionsUseCase", () => ({
-  ListTranscriptionsUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/ListTranscriptionsUseCase",
+  () => ({
+    ListTranscriptionsUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/ListTranscriptionsHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/ListTranscriptionsHandler";
 
 describe("ListTranscriptionsHandler", () => {
   beforeEach(() => {
@@ -53,7 +56,7 @@ describe("ListTranscriptionsHandler", () => {
 
   const createEvent = (
     queryParams: Record<string, string> | null = {},
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ): APIGatewayProxyEvent =>
     ({
       body: null,

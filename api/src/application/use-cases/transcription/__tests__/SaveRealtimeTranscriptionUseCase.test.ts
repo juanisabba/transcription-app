@@ -4,7 +4,6 @@ import {
   createMockStorageService,
 } from "../../../../../../tests/mocks";
 import { Transcription } from "../../../../domain/entities/Transcription";
-import { NotFoundError } from "../../../../shared/errors";
 
 const makeTranscription = (id: string, userId: string): Transcription =>
   new Transcription(
@@ -77,7 +76,7 @@ describe("SaveRealtimeTranscriptionUseCase", () => {
         "content",
         mockAudioBuffer
       )
-    ).rejects.toThrow(NotFoundError);
+    ).rejects.toThrow("No se encontró Transcripción con id non-existent");
 
     expect(mockStorageService.uploadFile).not.toHaveBeenCalled();
     expect(mockTranscriptionRepo.update).not.toHaveBeenCalled();
@@ -97,19 +96,19 @@ describe("SaveRealtimeTranscriptionUseCase", () => {
 
   it("should throw ValidationError when content is empty", async () => {
     await expect(
-      useCase.execute(userId, "trans-1", "", mockAudioBuffer)
+      useCase.execute("trans-1", userId, "", mockAudioBuffer)
     ).rejects.toThrow("content no puede estar vacío");
   });
 
   it("should throw ValidationError when audioBuffer is not a Buffer", async () => {
     await expect(
-      useCase.execute(userId, "trans-1", "content", null as unknown as Buffer)
+      useCase.execute("trans-1", userId, "content", null as unknown as Buffer)
     ).rejects.toThrow("audioFile no puede ser null/undefined");
   });
 
   it("should throw ValidationError when audioBuffer is empty", async () => {
     await expect(
-      useCase.execute(userId, "trans-1", "content", Buffer.from([]))
+      useCase.execute("trans-1", userId, "content", Buffer.from([]))
     ).rejects.toThrow("audioFile no puede estar vacío");
   });
 

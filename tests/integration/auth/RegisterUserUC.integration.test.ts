@@ -8,10 +8,10 @@ import {
   DynamoDBDocumentClient,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { RegisterUserUC } from "../../../src/application/use-cases/auth/RegisterUserUC";
-import type { RegisterUserDTO } from "../../../src/application/dto/auth";
+import { RegisterUserUC } from "../../../api/src/application/use-cases/auth/RegisterUserUC";
+import type { RegisterUserDTO } from "../../../api/src/application/dto/auth";
 import { createMockAuthService } from "../../mocks";
-import { PasswordService } from "../../../src/domain/services/PasswordService";
+import { PasswordService } from "../../../api/src/domain/services/PasswordService";
 import { UserRepository } from "../../../api/src/infrastructure/repositories/UserRepository";
 
 const DYNAMODB_LOCAL_ENDPOINT =

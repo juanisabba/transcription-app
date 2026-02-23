@@ -1,4 +1,4 @@
-import type { IStorageService } from "../../src/application/ports/IStorageService";
+import type { IStorageService } from "../../api/src/application/ports/IStorageService";
 
 export const createMockStorageService = (): jest.Mocked<IStorageService> => {
   return {

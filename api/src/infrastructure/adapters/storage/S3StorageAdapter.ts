@@ -56,7 +56,7 @@ export class S3StorageAdapter implements IStorageService {
       Key: key,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- S3Client/presigner type mismatch en monorepo (handlers privados)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument -- S3Client/presigner type mismatch
     const url = await getSignedUrl(this.s3Client as any, command, {
       expiresIn: safeExpiresIn,
     });
@@ -73,7 +73,7 @@ export class S3StorageAdapter implements IStorageService {
       Key: key,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- S3Client/presigner type mismatch en monorepo (handlers privados)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument -- S3Client/presigner type mismatch
     const url = await getSignedUrl(this.s3Client as any, command, {
       expiresIn: safeExpiresIn,
     });

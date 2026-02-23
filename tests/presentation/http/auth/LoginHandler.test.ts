@@ -2,16 +2,19 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 const mockAuthenticate = jest.fn();
 const mockValidateToken = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/repositories/userRepositoryInstance", () => ({
-  userRepository: {
-    findByEmail: jest.fn(),
-    findById: jest.fn(),
-    save: jest.fn(),
-    updateLastLogin: jest.fn().mockResolvedValue(undefined),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/userRepositoryInstance",
+  () => ({
+    userRepository: {
+      findByEmail: jest.fn(),
+      findById: jest.fn(),
+      save: jest.fn(),
+      updateLastLogin: jest.fn().mockResolvedValue(undefined),
+    },
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     authenticateWithPassword: mockAuthenticate,
     validateToken: mockValidateToken,
@@ -19,7 +22,7 @@ jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
 }));
 
 // Import handler after mocks (from tests/presentation/http/auth/ -> ../../../../ goes to project root)
-import { handler } from "../../../../src/presentation/http/auth/LoginHandler";
+import { handler } from "../../../../api/src/presentation/http/auth/LoginHandler";
 
 describe("LoginHandler", () => {
   beforeEach(() => {
@@ -53,7 +56,10 @@ describe("LoginHandler", () => {
     }) as APIGatewayProxyEvent;
 
   it("returns 200 with tokens on successful login", async () => {
-    const event = createEvent({ email: "user@example.com", password: "SecurePass1!" });
+    const event = createEvent({
+      email: "user@example.com",
+      password: "SecurePass1!",
+    });
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
@@ -66,9 +72,8 @@ describe("LoginHandler", () => {
   });
 
   it("returns 401 when credentials are invalid", async () => {
-    const { InvalidCredentialsException } = await import(
-      "../../../../src/domain/exceptions/InvalidCredentialsException"
-    );
+    const { InvalidCredentialsException } =
+      await import("../../../../api/src/domain/exceptions/InvalidCredentialsException");
     mockAuthenticate.mockRejectedValueOnce(new InvalidCredentialsException());
 
     const event = createEvent({ email: "user@example.com", password: "wrong" });

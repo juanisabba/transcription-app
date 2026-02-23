@@ -49,7 +49,7 @@ export class PasswordService {
     const hasLowercase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
     const hasSpecialChar =
-      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+      /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
     return (
       minLength &&

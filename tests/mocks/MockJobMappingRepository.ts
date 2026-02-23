@@ -1,4 +1,4 @@
-import type { IJobMappingRepository } from "../../src/domain/repositories/IJobMappingRepository";
+import type { IJobMappingRepository } from "../../api/src/domain/repositories/IJobMappingRepository";
 
 export const createMockJobMappingRepository =
   (): jest.Mocked<IJobMappingRepository> => {

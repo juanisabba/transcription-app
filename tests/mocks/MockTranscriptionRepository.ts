@@ -1,4 +1,4 @@
-import type { ITranscriptionRepository } from "../../src/domain/repositories/ITranscriptionRepository";
+import type { ITranscriptionRepository } from "../../api/src/domain/repositories/ITranscriptionRepository";
 
 export const createMockTranscriptionRepository =
   (): jest.Mocked<ITranscriptionRepository> => {

@@ -34,7 +34,9 @@ export class UserRepository implements IUserRepository {
     );
 
     const item = result.Items?.[0] as UserItem | undefined;
-    if (!item) return null;
+    if (!item) {
+      return null;
+    }
     return this.mapToDomain(item);
   }
 
@@ -46,7 +48,9 @@ export class UserRepository implements IUserRepository {
       })
     );
 
-    if (!result.Item) return null;
+    if (!result.Item) {
+      return null;
+    }
     return this.mapToDomain(result.Item as UserItem);
   }
 

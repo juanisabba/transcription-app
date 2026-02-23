@@ -82,7 +82,9 @@ export class TranscriptionRepository implements ITranscriptionRepository {
         }),
       );
 
-      if (!result.Item) return null;
+      if (!result.Item) {
+        return null;
+      }
       return this.mapToDomain(result.Item as TranscriptionItem);
     } catch (error: unknown) {
       console.error("Error finding transcription by id:", error);
@@ -186,8 +188,11 @@ export class TranscriptionRepository implements ITranscriptionRepository {
         for (const item of result.Items ?? []) {
           const t = item as TranscriptionItem;
           const duration = t.duration ?? 0;
-          if (t.type === "batch") totalBatchSeconds += duration;
-          else if (t.type === "realtime") totalRealtimeSeconds += duration;
+          if (t.type === "batch") {
+            totalBatchSeconds += duration;
+          } else if (t.type === "realtime") {
+            totalRealtimeSeconds += duration;
+          }
         }
 
         exclusiveStartKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;

@@ -67,7 +67,7 @@ describe("UploadTranscriptionUseCase", () => {
 
       await useCase.execute(userId, request);
 
-      const calledKey = mockStorageService.generatePresignedUrl.mock.calls[0][0] as string;
+      const calledKey = mockStorageService.generatePresignedUrl.mock.calls[0][0];
       expect(calledKey).toMatch(new RegExp(`^uploads/${userId}/`));
       expect(calledKey).toContain("test.mp3");
     });

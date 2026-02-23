@@ -2,13 +2,13 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 
 const mockValidateToken = jest.fn();
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/auth/LogoutHandler";
+import { handler } from "../../../../api/src/presentation/http/auth/LogoutHandler";
 
 describe("LogoutHandler", () => {
   beforeEach(() => {

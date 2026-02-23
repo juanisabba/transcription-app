@@ -104,13 +104,14 @@ export class SpeechMaticsAdapter implements IExternalApiService {
         formData,
       );
 
-      if (status !== 201 || !(data as SpeechmaticsJobResponse).id) {
+      const jobData = data as SpeechmaticsJobResponse;
+      if (status !== 201 || !jobData.id) {
         throw new Error(
           `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`,
         );
       }
 
-      return { jobId: (data as SpeechmaticsJobResponse).id };
+      return { jobId: jobData.id };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error("[Speechmatics] ERROR:", msg, error);
@@ -124,8 +125,8 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       `/jobs/${jobId}`,
     );
 
-    const status =
-      (data as SpeechmaticsJobStatusResponse).job?.status ?? "running";
+    const statusData = data as SpeechmaticsJobStatusResponse;
+    const status = statusData.job?.status ?? "running";
     return this.normalizeStatus(status);
   }
 
@@ -135,7 +136,8 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       `/jobs/${jobId}/transcript`,
     );
 
-    const results = (data as SpeechmaticsTranscriptResponse).results ?? [];
+    const transcriptData = data as SpeechmaticsTranscriptResponse;
+    const results = transcriptData.results ?? [];
     const transcript = results
       .filter(
         (r: SpeechmaticsTranscriptResult) =>
@@ -169,20 +171,26 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       );
     }
 
-    const data = (await response.json()) as SpeechmaticsRealtimeTokenResponse;
+    const tokenData = (await response.json()) as SpeechmaticsRealtimeTokenResponse;
 
-    if (!data.key_value) {
+    if (!tokenData.key_value) {
       throw new Error("Speechmatics did not return a realtime token");
     }
 
-    return { token: data.key_value, wsUrl: SPEECHMATICS_RT_WS_URL };
+    return { token: tokenData.key_value, wsUrl: SPEECHMATICS_RT_WS_URL };
   }
 
   private normalizeStatus(status: string): JobStatus {
     const s = status.toLowerCase();
-    if (s === "done" || s === "complete") return "done";
-    if (s === "rejected" || s === "failed") return "rejected";
-    if (s === "expired") return "expired";
+    if (s === "done" || s === "complete") {
+      return "done";
+    }
+    if (s === "rejected" || s === "failed") {
+      return "rejected";
+    }
+    if (s === "expired") {
+      return "expired";
+    }
     return "running";
   }
 }

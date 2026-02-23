@@ -50,7 +50,11 @@ jobs:
         env:
           NUXT_SKIP_OXC: true
 
-      # Paso final: Limpieza de residuos y despliegue nativo
+      - name: Build (API)
+        run: pnpm --filter api run build
+        env:
+          NUXT_SKIP_OXC: true
+
       - name: Deploy to production
         working-directory: api
         run: |

@@ -105,7 +105,7 @@ export class CognitoAuthAdapter implements IAuthService {
     }
   }
 
-  async validateToken(token: string): Promise<{ sub: string; email: string }> {
+  validateToken(token: string): Promise<{ sub: string; email: string }> {
     if (!token) {
       throw new UnauthorizedError("Token requerido");
     }
@@ -117,12 +117,19 @@ export class CognitoAuthAdapter implements IAuthService {
         throw new UnauthorizedError("Formato de token inválido");
       }
 
-      const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+      interface JwtPayload {
+        sub?: string;
+        email?: string;
+        "cognito:username"?: string;
+      }
+      const payload = JSON.parse(
+        Buffer.from(parts[1], "base64").toString()
+      ) as JwtPayload;
 
-      return {
-        sub: payload.sub,
+      return Promise.resolve({
+        sub: payload.sub ?? "",
         email: payload.email ?? payload["cognito:username"] ?? "",
-      };
+      });
     } catch (error: unknown) {
       console.error(`[Cognito.validate] Error:`, getErrorMessage(error));
       throw new UnauthorizedError("Token inválido");

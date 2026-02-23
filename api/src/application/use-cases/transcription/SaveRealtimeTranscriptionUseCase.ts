@@ -4,11 +4,19 @@ import { NotFoundError, ValidationError } from "@shared/errors";
 import { MAX_FILE_SIZE_BYTES } from "@shared/utils/validation";
 
 function getAudioExtension(contentType?: string): string {
-  if (!contentType) return "webm";
+  if (!contentType) {
+    return "webm";
+  }
   const m = contentType.toLowerCase();
-  if (m.includes("wav")) return "wav";
-  if (m.includes("ogg") || m.includes("opus")) return "ogg";
-  if (m.includes("mp3")) return "mp3";
+  if (m.includes("wav")) {
+    return "wav";
+  }
+  if (m.includes("ogg") || m.includes("opus")) {
+    return "ogg";
+  }
+  if (m.includes("mp3")) {
+    return "mp3";
+  }
   return "webm";
 }
 

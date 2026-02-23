@@ -4,54 +4,69 @@ const mockValidateToken = jest.fn();
 const mockFindById = jest.fn();
 const mockExecute = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance", () => ({
-  transcriptionRepository: {
-    save: jest.fn(),
-    findById: mockFindById,
-    findByUserId: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance",
+  () => ({
+    transcriptionRepository: {
+      save: jest.fn(),
+      findById: mockFindById,
+      findByUserId: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../api/src/infrastructure/repositories/jobMappingRepositoryInstance", () => ({
-  jobMappingRepository: {
-    save: jest.fn(),
-    findByJobId: jest.fn(),
-    findByTranscriptionId: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/jobMappingRepositoryInstance",
+  () => ({
+    jobMappingRepository: {
+      save: jest.fn(),
+      findByJobId: jest.fn(),
+      findByTranscriptionId: jest.fn(),
+      delete: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../api/src/infrastructure/adapters/external-services/speechMaticsAdapterInstance", () => ({
-  speechMaticsAdapter: {
-    startTranscription: jest.fn(),
-    getTranscriptionResult: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/adapters/external-services/speechMaticsAdapterInstance",
+  () => ({
+    speechMaticsAdapter: {
+      startTranscription: jest.fn(),
+      getTranscriptionResult: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../api/src/infrastructure/adapters/storage/storageServiceInstance", () => ({
-  storageService: {
-    generatePresignedUrl: jest.fn(),
-    generateDownloadPresignedUrl: jest.fn(),
-    deleteFile: jest.fn(),
-    getFile: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/adapters/storage/storageServiceInstance",
+  () => ({
+    storageService: {
+      generatePresignedUrl: jest.fn(),
+      generateDownloadPresignedUrl: jest.fn(),
+      deleteFile: jest.fn(),
+      getFile: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../src/application/use-cases/transcription/StartTranscriptionUseCase", () => ({
-  StartTranscriptionUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/StartTranscriptionUseCase",
+  () => ({
+    StartTranscriptionUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/ConfirmUploadHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/ConfirmUploadHandler";
 
 describe("ConfirmUploadHandler", () => {
   beforeEach(() => {
@@ -69,7 +84,7 @@ describe("ConfirmUploadHandler", () => {
   const createEvent = (
     pathParams: Record<string, string> | null,
     body: Record<string, unknown> = {},
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ): APIGatewayProxyEvent =>
     ({
       body: JSON.stringify(body),
@@ -87,7 +102,10 @@ describe("ConfirmUploadHandler", () => {
     }) as APIGatewayProxyEvent;
 
   it("returns 200 on successful confirm", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, { duration: 120 });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      { duration: 120 },
+    );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
@@ -101,12 +119,15 @@ describe("ConfirmUploadHandler", () => {
       "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
       "uploads/user-123/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/audio.mp3",
       "en",
-      120
+      120,
     );
   });
 
   it("returns 200 with undefined duration when body has no duration", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, {});
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      {},
+    );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
@@ -117,12 +138,16 @@ describe("ConfirmUploadHandler", () => {
       "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
       "uploads/user-123/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d/audio.mp3",
       "en",
-      undefined
+      undefined,
     );
   });
 
   it("returns 401 when Authorization header is missing", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, {}, { Authorization: "" });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      {},
+      { Authorization: "" },
+    );
     (event.headers as Record<string, string>).Authorization = "";
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});

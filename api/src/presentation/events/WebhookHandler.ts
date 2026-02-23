@@ -9,7 +9,9 @@ function verifyWebhookSignature(body: string, signature: string, secret: string)
   const expected = createHmac("sha256", secret)
     .update(body, "utf8")
     .digest("hex");
-  if (expected.length !== signature.length) return false;
+  if (expected.length !== signature.length) {
+    return false;
+  }
   try {
     return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(signature, "hex"));
   } catch {
@@ -27,10 +29,6 @@ interface SpeechmaticsTranscriptResult {
   type: string;
 }
 
-interface SpeechmaticsTranscriptBody {
-  results?: SpeechmaticsTranscriptResult[];
-}
-
 interface SpeechmaticsWebhookBody {
   job?: { id?: string };
   results?: SpeechmaticsTranscriptResult[];
@@ -39,7 +37,9 @@ interface SpeechmaticsWebhookBody {
 function extractTranscriptFromResults(
   results: SpeechmaticsTranscriptResult[] | undefined
 ): string {
-  if (!results || !Array.isArray(results)) return "";
+  if (!results || !Array.isArray(results)) {
+    return "";
+  }
   return results.map((r) => r.alternatives?.[0]?.content ?? "").join(" ");
 }
 
@@ -87,7 +87,7 @@ export const handler: APIGatewayProxyHandler = async (
     const okResponse = jsonResponse(200, { ok: true });
 
     // Lógica pesada en background (no bloquear la respuesta)
-    (async () => {
+    void (async () => {
       try {
         const transcript = extractTranscriptFromResults(parsed?.results);
         const mapping = await jobMappingRepository.findByJobId(jobId);

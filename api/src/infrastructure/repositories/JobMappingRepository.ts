@@ -35,7 +35,9 @@ export class JobMappingRepository implements IJobMappingRepository {
       }),
     );
 
-    if (!result.Item) return null;
+    if (!result.Item) {
+      return null;
+    }
 
     const item = result.Item as {
       jobId: string;

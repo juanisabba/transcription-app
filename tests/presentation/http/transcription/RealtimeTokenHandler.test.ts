@@ -3,25 +3,31 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 const mockValidateToken = jest.fn();
 const mockExecute = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/adapters/external-services/speechMaticsRealtimeAdapterInstance", () => ({
-  speechMaticsRealtimeAdapter: {
-    getToken: mockExecute,
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/adapters/external-services/speechMaticsRealtimeAdapterInstance",
+  () => ({
+    speechMaticsRealtimeAdapter: {
+      getToken: mockExecute,
+    },
+  }),
+);
 
-jest.mock("../../../../src/application/use-cases/transcription/GetRealtimeTokenUseCase", () => ({
-  GetRealtimeTokenUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/GetRealtimeTokenUseCase",
+  () => ({
+    GetRealtimeTokenUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/RealtimeTokenHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/RealtimeTokenHandler";
 
 describe("RealtimeTokenHandler", () => {
   beforeEach(() => {
@@ -34,7 +40,9 @@ describe("RealtimeTokenHandler", () => {
     });
   });
 
-  const createEvent = (headers: Record<string, string> = {}): APIGatewayProxyEvent =>
+  const createEvent = (
+    headers: Record<string, string> = {},
+  ): APIGatewayProxyEvent =>
     ({
       body: null,
       headers: { Authorization: "Bearer token", ...headers },

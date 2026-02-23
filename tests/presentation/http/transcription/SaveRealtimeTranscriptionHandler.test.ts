@@ -3,38 +3,47 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 const mockValidateToken = jest.fn();
 const mockExecute = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance", () => ({
-  transcriptionRepository: {
-    save: jest.fn(),
-    findById: jest.fn(),
-    findByUserId: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance",
+  () => ({
+    transcriptionRepository: {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findByUserId: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../api/src/infrastructure/adapters/storage/storageServiceInstance", () => ({
-  storageService: {
-    generatePresignedUrl: jest.fn(),
-    generateDownloadPresignedUrl: jest.fn(),
-    deleteFile: jest.fn(),
-    getFile: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/adapters/storage/storageServiceInstance",
+  () => ({
+    storageService: {
+      generatePresignedUrl: jest.fn(),
+      generateDownloadPresignedUrl: jest.fn(),
+      deleteFile: jest.fn(),
+      getFile: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../src/application/use-cases/transcription/SaveRealtimeTranscriptionUseCase", () => ({
-  SaveRealtimeTranscriptionUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/SaveRealtimeTranscriptionUseCase",
+  () => ({
+    SaveRealtimeTranscriptionUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/SaveRealtimeTranscriptionHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler";
 
 describe("SaveRealtimeTranscriptionHandler", () => {
   beforeEach(() => {
@@ -50,7 +59,7 @@ describe("SaveRealtimeTranscriptionHandler", () => {
     pathParams: Record<string, string> | null,
     body: Record<string, unknown> = {},
     contentType = "application/json",
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ): APIGatewayProxyEvent =>
     ({
       body: JSON.stringify(body),
@@ -80,7 +89,7 @@ describe("SaveRealtimeTranscriptionHandler", () => {
         audioBase64,
         fileName: "realtime.mp3",
         duration: 90,
-      }
+      },
     );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
@@ -97,12 +106,17 @@ describe("SaveRealtimeTranscriptionHandler", () => {
       expect.any(Buffer),
       "audio/webm",
       "realtime.mp3",
-      90
+      90,
     );
   });
 
   it("returns 401 when Authorization header is missing", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, {}, "application/json", { Authorization: "" });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      {},
+      "application/json",
+      { Authorization: "" },
+    );
     (event.headers as Record<string, string>).Authorization = "";
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
@@ -112,7 +126,10 @@ describe("SaveRealtimeTranscriptionHandler", () => {
   });
 
   it("returns 400 when transcription id is missing in path", async () => {
-    const event = createEvent(null, { content: "text", audioBase64: "dGVzdA==" });
+    const event = createEvent(null, {
+      content: "text",
+      audioBase64: "dGVzdA==",
+    });
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
@@ -121,7 +138,10 @@ describe("SaveRealtimeTranscriptionHandler", () => {
   });
 
   it("returns 400 when content is empty", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, { content: "", audioBase64: "dGVzdA==" });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      { content: "", audioBase64: "dGVzdA==" },
+    );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
@@ -130,7 +150,10 @@ describe("SaveRealtimeTranscriptionHandler", () => {
   });
 
   it("returns 400 when audioFile is missing (JSON path without audioBase64)", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, { content: "text" });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      { content: "text" },
+    );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
 
@@ -142,7 +165,7 @@ describe("SaveRealtimeTranscriptionHandler", () => {
     mockValidateToken.mockRejectedValue(new Error("Token expired"));
     const event = createEvent(
       { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
-      { content: "text", audioBase64: Buffer.from("x").toString("base64") }
+      { content: "text", audioBase64: Buffer.from("x").toString("base64") },
     );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
@@ -152,11 +175,16 @@ describe("SaveRealtimeTranscriptionHandler", () => {
   });
 
   it("returns 404 when transcription not found", async () => {
-    const { NotFoundError } = await import("../../../../src/shared/errors");
-    mockExecute.mockRejectedValue(new NotFoundError("Transcripción", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"));
+    const { NotFoundError } = await import("../../../../api/src/shared/errors");
+    mockExecute.mockRejectedValue(
+      new NotFoundError(
+        "Transcripción",
+        "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      ),
+    );
     const event = createEvent(
       { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
-      { content: "text", audioBase64: Buffer.from("x").toString("base64") }
+      { content: "text", audioBase64: Buffer.from("x").toString("base64") },
     );
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});

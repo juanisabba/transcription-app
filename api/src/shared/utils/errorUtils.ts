@@ -21,11 +21,17 @@ export function hasErrorName(
  * Obtiene el mensaje de un error de forma segura.
  */
 export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    return error.message;
+  }
   if (typeof error === "object" && error !== null && "message" in error) {
     const msg = (error as { message: unknown }).message;
-    if (typeof msg === "string") return msg;
+    if (typeof msg === "string") {
+      return msg;
+    }
   }
-  if (typeof error === "string") return error;
+  if (typeof error === "string") {
+    return error;
+  }
   return "Error desconocido";
 }

@@ -26,6 +26,13 @@ module.exports = {
     "@typescript-eslint/no-floating-promises": "error",
     "@typescript-eslint/await-thenable": "error",
     "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/require-await": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-argument": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-unnecessary-type-assertion": "warn",
 
     // General
     "no-console": "off",
@@ -35,4 +42,12 @@ module.exports = {
     curly: ["error", "all"],
   },
   ignorePatterns: ["dist/", "node_modules/", "*.js"],
+  overrides: [
+    {
+      files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
+      rules: {
+        "@typescript-eslint/unbound-method": "off",
+      },
+    },
+  ],
 };

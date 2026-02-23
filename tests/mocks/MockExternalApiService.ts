@@ -1,4 +1,4 @@
-import type { IExternalApiService } from "../../src/application/ports/IExternalApiService";
+import type { IExternalApiService } from "../../api/src/application/ports/IExternalApiService";
 
 export const createMockExternalApiService =
   (): jest.Mocked<IExternalApiService> => {

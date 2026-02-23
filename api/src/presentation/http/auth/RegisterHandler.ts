@@ -10,7 +10,9 @@ export const handler: APIGatewayProxyHandler = async (
   event,
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const body = JSON.parse(event.body || "{}");
+    const body = JSON.parse(event.body || "{}") as { email?: unknown; password?: unknown };
+    const email = typeof body.email === "string" ? body.email : "";
+    const password = typeof body.password === "string" ? body.password : "";
 
     const { PasswordService } =
       await import("@domain/services/PasswordService");
@@ -42,8 +44,8 @@ export const handler: APIGatewayProxyHandler = async (
     );
 
     const result = await useCase.execute({
-      email: body.email,
-      password: body.password,
+      email,
+      password,
     });
 
     return {

@@ -12,7 +12,7 @@ import {
 } from "../../../shared/errors";
 import { isValidUuidV4 } from "../../../shared/utils/validation";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// eslint-disable-next-line @typescript-eslint/no-var-requires -- aws-lambda-multipart-parser is CJS, no types
 const multipart = require("aws-lambda-multipart-parser");
 
 /** Repara texto UTF-8 que fue interpretado incorrectamente como Latin-1 (tildes, ñ). */
@@ -34,7 +34,9 @@ const useCase = new SaveRealtimeTranscriptionUseCase(transcriptionRepository, st
 
 function getBearerToken(event: { headers?: Record<string, string | undefined> }): string | null {
   const auth = event.headers?.Authorization ?? event.headers?.authorization ?? "";
-  if (!auth.startsWith("Bearer ")) return null;
+  if (!auth.startsWith("Bearer ")) {
+    return null;
+  }
   const token = auth.slice(7).trim();
   return token || null;
 }
@@ -44,6 +46,13 @@ interface MultipartFile {
   filename?: string;
   contentType?: string;
   content?: Buffer | { type: string; data: number[] };
+}
+
+interface ParsedMultipart {
+  fileName?: string;
+  content?: Buffer | string | { content?: Buffer | number[] | { data?: number[] } };
+  audioFile?: MultipartFile & { content?: Buffer | { data?: number[] } };
+  file?: MultipartFile & { content?: Buffer | { data?: number[] } };
 }
 
 /**
@@ -113,7 +122,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         eventToParse.isBase64Encoded = false;
       }
 
-      const parsed = multipart.parse(eventToParse, false);
+      const parsed = multipart.parse(eventToParse, false) as ParsedMultipart;
 
       fileName =
         typeof parsed.fileName === "string" && parsed.fileName.trim()
@@ -151,9 +160,9 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         const c = audioPart.content as Buffer | { type?: string; data?: number[] };
         if (Buffer.isBuffer(c)) {
           audioBuffer = c;
-        } else if (c != null && Array.isArray((c as { data?: number[] }).data)) {
+        } else if (c !== undefined && c !== null && Array.isArray((c as { data?: number[] }).data)) {
           audioBuffer = Buffer.from((c as { data: number[] }).data);
-        } else if (c != null && Array.isArray(c)) {
+        } else if (c !== undefined && c !== null && Array.isArray(c)) {
           audioBuffer = Buffer.from(c);
         }
         contentType = (audioPart as MultipartFile).contentType;
@@ -162,10 +171,8 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       // Cliente envía JSON con audioBase64 (más fiable que multipart con serverless-offline)
       const body = JSON.parse(event.body ?? "{}") as Record<string, unknown>;
       content = typeof body.content === "string" ? body.content.trim() : "";
-      fileName =
-        typeof body.fileName === "string" && (body.fileName as string).trim()
-          ? (body.fileName as string).trim()
-          : undefined;
+      const fn = typeof body.fileName === "string" ? body.fileName : "";
+      fileName = fn.trim() ? fn.trim() : undefined;
       const b64 = typeof body.audioBase64 === "string" ? body.audioBase64 : "";
       if (b64) {
         audioBuffer = Buffer.from(b64, "base64");
@@ -195,7 +202,6 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
       );
     }
 
-    const s3Path = `uploads/${userId}/${transcriptionId}/realtime_audio.wav`;
     const result = await useCase.execute(
       transcriptionId,
       userId,

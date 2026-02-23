@@ -19,13 +19,13 @@ jest.mock("../../../api/src/infrastructure/adapters/external-services/speechMati
   speechMaticsAdapter: { submitJob: jest.fn(), getJobStatus: jest.fn(), getResult: jest.fn(), createRealtimeToken: jest.fn() },
 }));
 
-jest.mock("../../../src/application/use-cases/transcription/ProcessTranscriptionResultUseCase", () => ({
+jest.mock("../../../api/src/application/use-cases/transcription/ProcessTranscriptionResultUseCase", () => ({
   ProcessTranscriptionResultUseCase: jest.fn().mockImplementation(() => ({
     execute: mockExecute,
   })),
 }));
 
-import { handler } from "../../../src/presentation/events/WebhookHandler";
+import { handler } from "../../../api/src/presentation/events/WebhookHandler";
 
 describe("WebhookHandler", () => {
   const originalEnv = process.env;

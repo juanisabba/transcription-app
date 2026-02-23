@@ -28,7 +28,7 @@ interface CachedToken {
 export class SpeechMaticsRealtimeAdapter implements IRealtimeTokenProvider {
   private cache: CachedToken | null = null;
 
-  async getRealtimeToken(userId: string): Promise<{
+  async getRealtimeToken(_userId: string): Promise<{
     token: string;
     wsUrl: string;
     expiresIn: number;

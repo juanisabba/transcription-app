@@ -1,1 +1,0 @@
-export { SpeechMaticsAdapter } from "./SpeechMaticsAdapter";

@@ -3,29 +3,35 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 const mockValidateToken = jest.fn();
 const mockExecute = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance", () => ({
-  transcriptionRepository: {
-    save: jest.fn(),
-    findById: jest.fn(),
-    findByUserId: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance",
+  () => ({
+    transcriptionRepository: {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findByUserId: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../src/application/use-cases/transcription/DownloadTranscriptionUseCase", () => ({
-  DownloadTranscriptionUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/DownloadTranscriptionUseCase",
+  () => ({
+    DownloadTranscriptionUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/DownloadTranscriptionHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/DownloadTranscriptionHandler";
 
 describe("DownloadTranscriptionHandler", () => {
   beforeEach(() => {
@@ -39,7 +45,7 @@ describe("DownloadTranscriptionHandler", () => {
 
   const createEvent = (
     pathParams: Record<string, string> | null,
-    headers: Record<string, string> = {}
+    headers: Record<string, string> = {},
   ): APIGatewayProxyEvent =>
     ({
       body: null,
@@ -68,11 +74,17 @@ describe("DownloadTranscriptionHandler", () => {
       "Content-Type": "text/plain; charset=utf-8",
       "Content-Disposition": 'attachment; filename="audio.mp3.txt"',
     });
-    expect(mockExecute).toHaveBeenCalledWith("user-123", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d");
+    expect(mockExecute).toHaveBeenCalledWith(
+      "user-123",
+      "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    );
   });
 
   it("returns 401 when Authorization header is missing", async () => {
-    const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" }, { Authorization: "" });
+    const event = createEvent(
+      { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
+      { Authorization: "" },
+    );
     (event.headers as Record<string, string>).Authorization = "";
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
@@ -91,8 +103,13 @@ describe("DownloadTranscriptionHandler", () => {
   });
 
   it("returns 404 when transcription not found", async () => {
-    const { NotFoundError } = await import("../../../../src/shared/errors");
-    mockExecute.mockRejectedValue(new NotFoundError("Transcripción", "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"));
+    const { NotFoundError } = await import("../../../../api/src/shared/errors");
+    mockExecute.mockRejectedValue(
+      new NotFoundError(
+        "Transcripción",
+        "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      ),
+    );
     const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" });
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});
@@ -102,7 +119,9 @@ describe("DownloadTranscriptionHandler", () => {
   });
 
   it("returns 422 when transcription not ready for download", async () => {
-    mockExecute.mockRejectedValue(new Error("La transcripción no está lista para descargar"));
+    mockExecute.mockRejectedValue(
+      new Error("La transcripción no está lista para descargar"),
+    );
     const event = createEvent({ id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" });
     const ctx: Context = { callbackWaitsForEmptyEventLoop: true } as Context;
     const result = await handler(event, ctx, () => {});

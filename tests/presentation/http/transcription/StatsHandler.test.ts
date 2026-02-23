@@ -3,29 +3,35 @@ import type { APIGatewayProxyEvent, Context } from "aws-lambda";
 const mockValidateToken = jest.fn();
 const mockExecute = jest.fn();
 
-jest.mock("../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance", () => ({
-  transcriptionRepository: {
-    save: jest.fn(),
-    findById: jest.fn(),
-    findByUserId: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-}));
+jest.mock(
+  "../../../../api/src/infrastructure/repositories/transcriptionRepositoryInstance",
+  () => ({
+    transcriptionRepository: {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findByUserId: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  }),
+);
 
-jest.mock("../../../../src/application/use-cases/transcription/GetStatsUseCase", () => ({
-  GetStatsUseCase: jest.fn().mockImplementation(() => ({
-    execute: mockExecute,
-  })),
-}));
+jest.mock(
+  "../../../../api/src/application/use-cases/transcription/GetStatsUseCase",
+  () => ({
+    GetStatsUseCase: jest.fn().mockImplementation(() => ({
+      execute: mockExecute,
+    })),
+  }),
+);
 
-jest.mock("../../../../src/infrastructure/adapters/auth", () => ({
+jest.mock("../../../../api/src/infrastructure/adapters/auth", () => ({
   CognitoAuthAdapter: jest.fn().mockImplementation(() => ({
     validateToken: mockValidateToken,
   })),
 }));
 
-import { handler } from "../../../../src/presentation/http/transcription/StatsHandler";
+import { handler } from "../../../../api/src/presentation/http/transcription/StatsHandler";
 
 describe("StatsHandler", () => {
   beforeEach(() => {
@@ -37,7 +43,9 @@ describe("StatsHandler", () => {
     });
   });
 
-  const createEvent = (headers: Record<string, string> = {}): APIGatewayProxyEvent =>
+  const createEvent = (
+    headers: Record<string, string> = {},
+  ): APIGatewayProxyEvent =>
     ({
       body: null,
       headers: { Authorization: "Bearer token", ...headers },

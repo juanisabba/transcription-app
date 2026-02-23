@@ -1,4 +1,4 @@
-import type { IRealtimeTokenProvider } from "../../src/application/ports/IRealtimeTokenProvider";
+import type { IRealtimeTokenProvider } from "../../api/src/application/ports/IRealtimeTokenProvider";
 
 export const createMockRealtimeTokenProvider =
   (): jest.Mocked<IRealtimeTokenProvider> => {
