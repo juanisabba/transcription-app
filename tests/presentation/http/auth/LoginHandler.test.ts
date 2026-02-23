@@ -26,6 +26,7 @@ describe("LoginHandler", () => {
     jest.clearAllMocks();
     mockAuthenticate.mockResolvedValue({
       accessToken: "access-token",
+      idToken: "id-token",
       refreshToken: "refresh-token",
       expiresIn: 3600,
     });
@@ -60,6 +61,7 @@ describe("LoginHandler", () => {
     expect(result!.statusCode).toBe(200);
     const body = JSON.parse(result!.body ?? "{}");
     expect(body.accessToken).toBe("access-token");
+    expect(body.idToken).toBe("id-token");
     expect(body.refreshToken).toBe("refresh-token");
   });
 

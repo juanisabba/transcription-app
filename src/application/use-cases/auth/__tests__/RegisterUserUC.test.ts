@@ -37,6 +37,7 @@ describe("RegisterUserUC", () => {
       mockAuthService.register.mockResolvedValue({ userId: "cognito-123" });
       mockAuthService.authenticateWithPassword.mockResolvedValue({
         accessToken: "access-token",
+        idToken: "id-token",
         refreshToken: "refresh-token",
         expiresIn: 3600,
       });
@@ -60,6 +61,7 @@ describe("RegisterUserUC", () => {
       mockAuthService.register.mockResolvedValue({ userId: "cognito-123" });
       mockAuthService.authenticateWithPassword.mockResolvedValue({
         accessToken: "jwt-access",
+        idToken: "jwt-id",
         refreshToken: "jwt-refresh",
         expiresIn: 3600,
       });
@@ -72,6 +74,7 @@ describe("RegisterUserUC", () => {
       const result = await useCase.execute(request);
 
       expect(result).toHaveProperty("accessToken", "jwt-access");
+      expect(result).toHaveProperty("idToken", "jwt-id");
       expect(result).toHaveProperty("refreshToken", "jwt-refresh");
       expect(result).toHaveProperty("userId");
       expect(result).toHaveProperty("email", validEmail);

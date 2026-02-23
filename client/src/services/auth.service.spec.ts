@@ -19,7 +19,10 @@ describe("auth.service", () => {
       data: {
         userId: "user-1",
         email: "test@example.com",
-        accessToken: "token-xyz",
+        accessToken: "access-xyz",
+        idToken: "id-token-xyz",
+        refreshToken: "refresh-xyz",
+        expiresIn: 3600,
       },
     });
 
@@ -32,11 +35,9 @@ describe("auth.service", () => {
       email: "test@example.com",
       password: "Pass123!",
     });
-    expect(result).toEqual({
-      userId: "user-1",
-      email: "test@example.com",
-      accessToken: "token-xyz",
-    });
+    expect(result.userId).toBe("user-1");
+    expect(result.email).toBe("test@example.com");
+    expect(result.idToken).toBe("id-token-xyz");
   });
 
   it("register llama POST /auth/register con credenciales", async () => {
@@ -44,7 +45,10 @@ describe("auth.service", () => {
       data: {
         userId: "user-2",
         email: "new@example.com",
-        accessToken: "token-abc",
+        accessToken: "access-abc",
+        idToken: "id-token-abc",
+        refreshToken: "refresh-abc",
+        expiresIn: 3600,
       },
     });
 

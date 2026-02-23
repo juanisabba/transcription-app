@@ -66,10 +66,15 @@ export interface AuthResponseDTO {
   email: string;
 
   /**
-   * Token de acceso (JWT u otro formato) que el frontend usará
-   * para autenticar peticiones posteriores.
+   * Token de acceso (JWT).
    */
   accessToken: string;
+
+  /**
+   * Id Token (JWT) - requerido por API Gateway Cognito Authorizer para endpoints protegidos.
+   * El frontend debe usar idToken en el header Authorization.
+   */
+  idToken: string;
 
   /**
    * Token de refresco usado para obtener nuevos tokens de acceso

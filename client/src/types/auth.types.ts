@@ -23,6 +23,7 @@ export interface AuthResponse {
   userId: string;
   email: string;
   accessToken: string;
+  idToken: string;
   refreshToken: string;
   expiresIn: number;
 }

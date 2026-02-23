@@ -23,7 +23,13 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      // API: NUXT_PUBLIC_API_URL sobrescribe. Default = prod.
       apiUrl: process.env.NUXT_PUBLIC_API_URL || "http://localhost:3001",
+      // apiUrl: "https://qucod37on2.execute-api.eu-north-1.amazonaws.com/prod",
+      // Cognito: NUXT_PUBLIC_COGNITO_USER_POOL_ID y NUXT_PUBLIC_COGNITO_CLIENT_ID.
+      // Cuando apuntes a prod, configurar con los valores de producción.
+      cognitoUserPoolId: "",
+      cognitoClientId: "",
     },
   },
 

@@ -17,6 +17,8 @@ export class CognitoAuthAdapter implements IAuthService {
     this.userPoolId = process.env.COGNITO_USER_POOL_ID ?? "";
     this.clientId = process.env.COGNITO_CLIENT_ID ?? "";
 
+    console.log("Cognito Client ID cargado:", typeof this.clientId, this.clientId);
+
     if (!this.userPoolId || !this.clientId) {
       console.error("[ERROR] Cognito credentials not configured!");
       console.error("COGNITO_USER_POOL_ID:", this.userPoolId);
@@ -82,9 +84,13 @@ export class CognitoAuthAdapter implements IAuthService {
       if (!result?.AccessToken || !result.RefreshToken) {
         throw new UnauthorizedError("No se recibieron tokens de Cognito");
       }
+      if (!result.IdToken) {
+        throw new UnauthorizedError("Cognito no devolvió IdToken (requerido por API Gateway Authorizer)");
+      }
 
       return {
         accessToken: result.AccessToken,
+        idToken: result.IdToken,
         refreshToken: result.RefreshToken,
         expiresIn: result.ExpiresIn ?? 3600,
       };

@@ -8,14 +8,16 @@ Cypress.Commands.add("loginWithToken", (email = "test@example.com") => {
   const mockAuth = {
     userId: "test-user-123",
     email,
-    accessToken: "mock-jwt-token-for-e2e",
+    accessToken: "mock-access-token-e2e",
+    idToken: "mock-jwt-token-for-e2e",
     refreshToken: "mock-refresh",
     expiresIn: 3600,
   };
 
   cy.visit("/");
   cy.window().then((win) => {
-    win.localStorage.setItem("token", mockAuth.accessToken);
+    win.localStorage.setItem("token", mockAuth.idToken);
+    win.localStorage.setItem("accessToken", mockAuth.accessToken);
   });
   cy.reload();
   cy.url().should("include", "/");
@@ -29,7 +31,8 @@ Cypress.Commands.add("mockAuthSuccess", (email = "test@example.com") => {
   const mockResponse = {
     userId: "mock-user-id",
     email,
-    accessToken: "mock-jwt-token",
+    accessToken: "mock-access-token",
+    idToken: "mock-jwt-token",
     refreshToken: "mock-refresh-token",
     expiresIn: 3600,
   };

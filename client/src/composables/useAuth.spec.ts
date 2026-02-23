@@ -28,7 +28,10 @@ describe("useAuth", () => {
     const mockResponse = {
       userId: "user-1",
       email: "test@example.com",
-      accessToken: "token-xyz",
+      accessToken: "access-xyz",
+      idToken: "id-token-xyz",
+      refreshToken: "refresh-xyz",
+      expiresIn: 3600,
     };
     vi.mocked(authService.login).mockResolvedValue(mockResponse);
 
@@ -42,7 +45,7 @@ describe("useAuth", () => {
       email: "test@example.com",
       password: "Pass123!",
     });
-    expect(authStore.token).toBe("token-xyz");
+    expect(authStore.token).toBe("id-token-xyz");
     expect(authStore.user?.email).toBe("test@example.com");
     expect(uiStore.successMessage).toBe("Inicio de sesión exitoso");
   });
@@ -66,7 +69,10 @@ describe("useAuth", () => {
     const mockResponse = {
       userId: "user-2",
       email: "new@example.com",
-      accessToken: "token-abc",
+      accessToken: "access-abc",
+      idToken: "id-token-abc",
+      refreshToken: "refresh-abc",
+      expiresIn: 3600,
     };
     vi.mocked(authService.register).mockResolvedValue(mockResponse);
 
@@ -79,7 +85,7 @@ describe("useAuth", () => {
       email: "new@example.com",
       password: "Pass123!",
     });
-    expect(authStore.token).toBe("token-abc");
+    expect(authStore.token).toBe("id-token-abc");
   });
 
   it("logout llama authService.logout y limpia el store", async () => {
@@ -87,7 +93,10 @@ describe("useAuth", () => {
     authStore.setAuth({
       userId: "user-1",
       email: "test@example.com",
-      accessToken: "token",
+      accessToken: "access-token",
+      idToken: "id-token",
+      refreshToken: "refresh-token",
+      expiresIn: 3600,
     });
     vi.mocked(authService.logout).mockResolvedValue(undefined);
 

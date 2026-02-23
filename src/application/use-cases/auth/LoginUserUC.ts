@@ -63,11 +63,12 @@ export class LoginUserUC {
       // Ignorar si el usuario no existe en BD (e.g. modo mock, login sin registro previo)
     }
 
-    // Paso 5: Retornar respuesta
+    // Paso 5: Retornar respuesta (idToken para API Gateway Authorizer, accessToken para logout)
     return {
       userId,
       email,
       accessToken: tokens.accessToken,
+      idToken: tokens.idToken,
       refreshToken: tokens.refreshToken,
       expiresIn: tokens.expiresIn,
     };

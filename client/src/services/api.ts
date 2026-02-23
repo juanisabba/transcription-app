@@ -12,15 +12,21 @@ const api: AxiosInstance = axios.create({
 });
 
 // Interceptor: agregar token en cada request
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((reqConfig) => {
   const authStore = useAuthStore();
-  if (authStore.token) {
-    config.headers.Authorization = `Bearer ${authStore.token}`;
+  const isLogout =
+    typeof reqConfig.url === "string" && reqConfig.url.includes("/auth/logout");
+  // Logout requiere accessToken (GlobalSignOut); resto usa idToken (Cognito Authorizer)
+  const token = isLogout
+    ? authStore.accessToken ?? (import.meta.client ? localStorage.getItem("accessToken") : null)
+    : authStore.token ?? (import.meta.client ? localStorage.getItem("token") : null);
+  if (token) {
+    reqConfig.headers.Authorization = `Bearer ${token}`;
   }
-  if (config.data instanceof FormData) {
-    delete config.headers["Content-Type"];
+  if (reqConfig.data instanceof FormData) {
+    delete reqConfig.headers["Content-Type"];
   }
-  return config;
+  return reqConfig;
 });
 
 // Interceptor: manejar errores

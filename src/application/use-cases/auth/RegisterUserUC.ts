@@ -87,11 +87,12 @@ export class RegisterUserUC {
       password,
     );
 
-    // Paso 9: Construir y retornar DTO de respuesta
+    // Paso 9: Construir y retornar DTO de respuesta (idToken para API Gateway Authorizer)
     const response: AuthResponseDTO = {
       userId: user.id,
       email: user.email,
       accessToken: tokens.accessToken,
+      idToken: tokens.idToken,
       refreshToken: tokens.refreshToken,
       expiresIn: tokens.expiresIn,
     };

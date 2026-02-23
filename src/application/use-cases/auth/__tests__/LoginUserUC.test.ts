@@ -20,6 +20,7 @@ describe("LoginUserUC", () => {
     it("should return AuthResponseDTO with tokens on successful login", async () => {
       mockAuthService.authenticateWithPassword.mockResolvedValue({
         accessToken: "access-token",
+        idToken: "id-token",
         refreshToken: "refresh-token",
         expiresIn: 3600,
       });
@@ -35,6 +36,7 @@ describe("LoginUserUC", () => {
       expect(result.userId).toBe("user-id-123");
       expect(result.email).toBe(validEmail);
       expect(result.accessToken).toBe("access-token");
+      expect(result.idToken).toBe("id-token");
       expect(result.refreshToken).toBe("refresh-token");
       expect(result.expiresIn).toBe(3600);
     });
@@ -42,6 +44,7 @@ describe("LoginUserUC", () => {
     it("should complete login even if updateLastLogin fails (mock mode)", async () => {
       mockAuthService.authenticateWithPassword.mockResolvedValue({
         accessToken: "access-token",
+        idToken: "id-token",
         refreshToken: "refresh-token",
         expiresIn: 3600,
       });

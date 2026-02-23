@@ -18,18 +18,21 @@ describe("auth.store", () => {
     expect(store.email).toBeNull();
   });
 
-  it("setAuth actualiza user y token", () => {
+  it("setAuth actualiza user, token (idToken) y accessToken", () => {
     const store = useAuthStore();
     const response = {
       userId: "user-123",
       email: "test@example.com",
-      accessToken: "jwt-token-xyz",
+      accessToken: "access-xyz",
+      idToken: "id-token-xyz",
+      refreshToken: "refresh-xyz",
+      expiresIn: 3600,
     };
 
     store.setAuth(response);
 
     expect(store.isAuthenticated).toBe(true);
-    expect(store.token).toBe("jwt-token-xyz");
+    expect(store.token).toBe("id-token-xyz");
     expect(store.user?.email).toBe("test@example.com");
     expect(store.user?.userId).toBe("user-123");
     expect(store.email).toBe("test@example.com");
@@ -40,7 +43,10 @@ describe("auth.store", () => {
     store.setAuth({
       userId: "user-123",
       email: "test@example.com",
-      accessToken: "token",
+      accessToken: "access-token",
+      idToken: "id-token",
+      refreshToken: "refresh-token",
+      expiresIn: 3600,
     });
 
     store.logout();

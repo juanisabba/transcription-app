@@ -62,6 +62,7 @@ describe("RegisterUserUC Integration", () => {
     mockAuthService.register.mockResolvedValue({ userId: "cognito-123" });
     mockAuthService.authenticateWithPassword.mockResolvedValue({
       accessToken: "access-token",
+      idToken: "id-token",
       refreshToken: "refresh-token",
       expiresIn: 3600,
     });

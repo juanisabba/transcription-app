@@ -66,7 +66,7 @@ provider:
 functions:
   # ===== HELLO (Test Endpoint) =====
   hello:
-    handler: dist/api/src/presentation/http/transcription/HelloHandler.handler
+    handler: dist/src/presentation/http/transcription/HelloHandler.handler
     events:
       - http:
           path: hello
@@ -98,10 +98,7 @@ functions:
           path: auth/logout
           method: post
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   # ===== TRANSCRIPTION ENDPOINTS =====
 
@@ -112,10 +109,7 @@ functions:
           path: transcriptions/upload
           method: post
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   realtimeSession:
     handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
@@ -124,10 +118,7 @@ functions:
           path: transcriptions/realtime
           method: post
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   realtimeToken:
     handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
@@ -136,10 +127,7 @@ functions:
           path: transcriptions/realtime/token
           method: post
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   saveRealtimeTranscription:
     handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
@@ -148,10 +136,7 @@ functions:
           path: transcriptions/realtime/{id}/save
           method: post
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   listTranscriptions:
     handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
@@ -160,10 +145,7 @@ functions:
           path: transcriptions
           method: get
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   statsTranscriptions:
     handler: dist/src/presentation/http/transcription/StatsHandler.handler
@@ -172,10 +154,7 @@ functions:
           path: transcriptions/stats
           method: get
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   downloadTranscription:
     handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
@@ -184,10 +163,7 @@ functions:
           path: transcriptions/{id}/download
           method: get
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   deleteTranscription:
     handler: dist/src/presentation/http/transcription/DeleteHandler.handler
@@ -196,10 +172,7 @@ functions:
           path: transcriptions/{id}
           method: delete
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   confirmUpload:
     handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
@@ -208,10 +181,7 @@ functions:
           path: transcriptions/{id}/confirm
           method: post
           cors: true
-          authorizer:
-            name: MyCognitoAuth
-            type: COGNITO_USER_POOLS
-            arn: !GetAtt CognitoUserPool.Arn
+          authorizer: ${self:custom.cognitoAuthorizer}
 
   # ===== S3 EVENT TRIGGERS =====
 
@@ -233,6 +203,11 @@ functions:
       - http:
           path: webhook/speechmatics
           method: post
+
+package:
+  patterns:
+    - "dist/**"
+    - "!src/**"
 
 build:
   esbuild: true
@@ -361,6 +336,33 @@ resources:
           RefreshToken: days
         AccessTokenValidity: 1
         RefreshTokenValidity: 30
+        # Sin openid, Cognito no genera IdToken en USER_PASSWORD_AUTH (requerido por API Gateway Authorizer)
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthScopes:
+          - email
+          - openid
+          - profile
+
+    # CORS en respuestas 4XX del authorizer (401 sin esto puede fallar en cross-origin)
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
+    GatewayResponseExpiredToken:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        ResponseType: EXPIRED_TOKEN
+        RestApiId:
+          Ref: ApiGatewayRestApi
 
   Outputs:
     CognitoUserPoolId:
@@ -369,6 +371,15 @@ resources:
       Value: !Ref CognitoUserPoolClient
 
 custom:
+  cognitoUserPoolArn:
+    prod: "arn:aws:cognito-idp:eu-north-1:273386478728:userpool/eu-north-1_5WlAlQQHu"
+    dev: !GetAtt CognitoUserPool.Arn
+    default: !GetAtt CognitoUserPool.Arn
+  cognitoAuthorizer:
+    name: MyCognitoAuth
+    type: COGNITO_USER_POOLS
+    arn: ${self:custom.cognitoUserPoolArn.${self:provider.stage}, self:custom.cognitoUserPoolArn.default}
+    identitySource: method.request.header.Authorization
   # COGNITO_AUTO_CONFIRM por stage (prod: verificación email; dev: auto-confirm)
   cognitoAutoConfirmByStage:
     prod: 'true'
@@ -386,8 +397,6 @@ custom:
       - DYNAMODB_JOB_MAPPING_TABLE
       - S3_BUCKET_NAME
       - COGNITO_AUTO_CONFIRM
-      - COGNITO_USER_POOL_ID
-      - COGNITO_CLIENT_ID
   dynamodb:
     stages:
       - local
