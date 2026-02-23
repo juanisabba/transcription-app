@@ -1,11 +1,5 @@
 service: vocali-api
 
-# Authorizer Cognito reutilizable (Serverless v4 no soporta provider.apiGateway.authorizers)
-x-cognito-authorizer: &cognitoAuthorizer
-  name: MyCognitoAuth
-  type: COGNITO_USER_POOLS
-  arn: !GetAtt CognitoUserPool.Arn
-
 frameworkVersion: "4"
 
 provider:
@@ -47,9 +41,12 @@ provider:
             - !Sub "arn:aws:s3:::vocali-transcriptions-${self:provider.stage}/*"
         - Effect: Allow
           Action:
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminConfirmSignUp
-          Resource:
-            - !GetAtt CognitoUserPool.Arn
+            - cognito-idp:ListUsers
+          Resource: !GetAtt CognitoUserPool.Arn
 
   environment:
     STAGE: ${self:provider.stage}
@@ -101,7 +98,10 @@ functions:
           path: auth/logout
           method: post
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   # ===== TRANSCRIPTION ENDPOINTS =====
 
@@ -112,7 +112,10 @@ functions:
           path: transcriptions/upload
           method: post
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   realtimeSession:
     handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
@@ -121,7 +124,10 @@ functions:
           path: transcriptions/realtime
           method: post
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   realtimeToken:
     handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
@@ -130,7 +136,10 @@ functions:
           path: transcriptions/realtime/token
           method: post
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   saveRealtimeTranscription:
     handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
@@ -139,7 +148,10 @@ functions:
           path: transcriptions/realtime/{id}/save
           method: post
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   listTranscriptions:
     handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
@@ -148,7 +160,10 @@ functions:
           path: transcriptions
           method: get
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   statsTranscriptions:
     handler: dist/src/presentation/http/transcription/StatsHandler.handler
@@ -157,7 +172,10 @@ functions:
           path: transcriptions/stats
           method: get
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   downloadTranscription:
     handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
@@ -166,7 +184,10 @@ functions:
           path: transcriptions/{id}/download
           method: get
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   deleteTranscription:
     handler: dist/src/presentation/http/transcription/DeleteHandler.handler
@@ -175,7 +196,10 @@ functions:
           path: transcriptions/{id}
           method: delete
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   confirmUpload:
     handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
@@ -184,7 +208,10 @@ functions:
           path: transcriptions/{id}/confirm
           method: post
           cors: true
-          authorizer: *cognitoAuthorizer
+          authorizer:
+            name: MyCognitoAuth
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt CognitoUserPool.Arn
 
   # ===== S3 EVENT TRIGGERS =====
 
