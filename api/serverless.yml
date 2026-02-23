@@ -66,7 +66,7 @@ provider:
 functions:
   # ===== HELLO (Test Endpoint) =====
   hello:
-    handler: dist/api/src/index.handler
+    handler: dist/api/src/presentation/http/transcription/HelloHandler.handler
     events:
       - http:
           path: hello
@@ -371,7 +371,7 @@ resources:
 custom:
   # COGNITO_AUTO_CONFIRM por stage (prod: verificación email; dev: auto-confirm)
   cognitoAutoConfirmByStage:
-    prod: 'false'
+    prod: 'true'
     dev: 'true'
     local: 'true'
   dotenv:
