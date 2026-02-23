@@ -13,7 +13,7 @@ import {
 import { isValidUuidV4 } from "../../../shared/utils/validation";
 import { apiResponse } from "../helpers/responseHelper";
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires -- aws-lambda-multipart-parser is CJS, no types
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment -- aws-lambda-multipart-parser is CJS, no types
 const multipart = require("aws-lambda-multipart-parser");
 
 /** Repara texto UTF-8 que fue interpretado incorrectamente como Latin-1 (tildes, ñ). */
@@ -106,6 +106,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         eventToParse.isBase64Encoded = false;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- CJS multipart parser
       const parsed = multipart.parse(eventToParse, false) as ParsedMultipart;
 
       fileName =

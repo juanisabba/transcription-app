@@ -21,7 +21,9 @@ export const corsHeaders = {
 };
 
 function resolveAllowOrigin(origin?: string | null): string | undefined {
-  if (!origin) return "*"; // server-to-server (webhooks): sin Origin
+  if (!origin) {
+    return "*"; // server-to-server (webhooks): sin Origin
+  }
   return ALLOWED_ORIGINS.includes(origin as (typeof ALLOWED_ORIGINS)[number])
     ? origin
     : undefined; // origen no permitido: omitir header, el navegador bloqueará
@@ -53,6 +55,8 @@ export function apiResponse(
     ...corsHeadersBase,
     ...options?.headers,
   };
-  if (allowOrigin) headers["Access-Control-Allow-Origin"] = allowOrigin;
+  if (allowOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowOrigin;
+  }
   return { statusCode, body: bodyStr, headers };
 }

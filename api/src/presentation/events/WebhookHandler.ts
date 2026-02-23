@@ -47,12 +47,12 @@ function extractTranscriptFromResults(
 const jsonResponse = (status: number, body: object): APIGatewayProxyResult =>
   apiResponse(status, body);
 
-export const handler: APIGatewayProxyHandler = async (
+export const handler: APIGatewayProxyHandler = (
   event
 ): Promise<APIGatewayProxyResult> => {
   try {
     if (!event.body) {
-      return jsonResponse(400, { error: "Missing request body" });
+      return Promise.resolve(jsonResponse(400, { error: "Missing request body" }));
     }
 
     const webhookSecret = process.env.SPEECHMATICS_WEBHOOK_SECRET;
@@ -60,11 +60,11 @@ export const handler: APIGatewayProxyHandler = async (
       const hdrs = event.headers ?? {};
       const signature = hdrs["X-Webhook-Signature"] ?? hdrs["x-webhook-signature"];
       if (!signature || typeof signature !== "string") {
-        return jsonResponse(401, { error: "Missing X-Webhook-Signature header" });
+        return Promise.resolve(jsonResponse(401, { error: "Missing X-Webhook-Signature header" }));
       }
       const sig = signature.startsWith("sha256=") ? signature.slice(7) : signature;
       if (!verifyWebhookSignature(event.body, sig, webhookSecret)) {
-        return jsonResponse(401, { error: "Invalid webhook signature" });
+        return Promise.resolve(jsonResponse(401, { error: "Invalid webhook signature" }));
       }
     }
 
@@ -72,11 +72,11 @@ export const handler: APIGatewayProxyHandler = async (
     try {
       parsed = JSON.parse(event.body) as SpeechmaticsWebhookBody;
     } catch {
-      return jsonResponse(400, { error: "Invalid JSON body" });
+      return Promise.resolve(jsonResponse(400, { error: "Invalid JSON body" }));
     }
 
     if (!parsed?.job?.id) {
-      return jsonResponse(400, { error: "Missing job.id in body" });
+      return Promise.resolve(jsonResponse(400, { error: "Missing job.id in body" }));
     }
 
     const jobId = parsed.job.id;
@@ -108,9 +108,9 @@ export const handler: APIGatewayProxyHandler = async (
       }
     })();
 
-    return okResponse;
+    return Promise.resolve(okResponse);
   } catch (err) {
     console.error("WebhookHandler unexpected error:", err);
-    return jsonResponse(502, { error: "Internal webhook processing error" });
+    return Promise.resolve(jsonResponse(502, { error: "Internal webhook processing error" }));
   }
 };

@@ -104,14 +104,13 @@ export class SpeechMaticsAdapter implements IExternalApiService {
         formData,
       );
 
-      const jobData = data as SpeechmaticsJobResponse;
-      if (status !== 201 || !jobData.id) {
+      if (status !== 201 || !data.id) {
         throw new Error(
           `Speechmatics submit job failed: ${status} ${JSON.stringify(data)}`,
         );
       }
 
-      return { jobId: jobData.id };
+      return { jobId: data.id };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error("[Speechmatics] ERROR:", msg, error);
@@ -125,8 +124,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       `/jobs/${jobId}`,
     );
 
-    const statusData = data as SpeechmaticsJobStatusResponse;
-    const status = statusData.job?.status ?? "running";
+    const status = data.job?.status ?? "running";
     return this.normalizeStatus(status);
   }
 
@@ -136,8 +134,7 @@ export class SpeechMaticsAdapter implements IExternalApiService {
       `/jobs/${jobId}/transcript`,
     );
 
-    const transcriptData = data as SpeechmaticsTranscriptResponse;
-    const results = transcriptData.results ?? [];
+    const results = data.results ?? [];
     const transcript = results
       .filter(
         (r: SpeechmaticsTranscriptResult) =>
