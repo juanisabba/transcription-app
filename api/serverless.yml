@@ -216,9 +216,8 @@ build:
     minify: false
     platform: node
     target: node18
-    external:
-      - "@aws-sdk/*" # El SDK ya está en el runtime de Lambda, esto aligera el bundle
-
+    packages: external # Esto le dice: "No intentes construir un package.json nuevo"
+    external: [] # Asegura que meta todo en el bundle
 plugins:
   - serverless-offline
   - serverless-dynamodb-local

@@ -50,11 +50,12 @@ jobs:
         env:
           NUXT_SKIP_OXC: true
 
-      # Nota: Se ha eliminado el "Build (API)" manual para dejar que Serverless v4 use su esbuild nativo
-
+      # Paso final: Limpieza de residuos y despliegue nativo
       - name: Deploy to production
         working-directory: api
-        run: pnpm exec serverless deploy --stage prod
+        run: |
+          rm -rf .serverless
+          pnpm exec serverless deploy --stage prod
         env:
           STAGE: prod
           COGNITO_AUTO_CONFIRM: "false"
