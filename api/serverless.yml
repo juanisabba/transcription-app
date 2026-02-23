@@ -101,7 +101,6 @@ functions:
           path: auth/logout
           method: post
           cors: true
-          authorizer: ${self:custom.cognitoAuthorizer}
 
   # ===== TRANSCRIPTION ENDPOINTS =====
 

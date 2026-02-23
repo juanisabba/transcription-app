@@ -99,6 +99,13 @@ export class CognitoAuthAdapter implements IAuthService {
         throw new UnauthorizedError("Email o contraseña inválidos");
       }
 
+      // Usuario inexistente: Cognito devuelve UserNotFoundException cuando
+      // PreventUserExistenceErrors=LEGACY. Mapear a UnauthorizedError para evitar 500.
+      const err = error as Record<string, unknown>;
+      if (typeof err["name"] === "string" && err["name"] === "UserNotFoundException") {
+        throw new UnauthorizedError("Email o contraseña inválidos");
+      }
+
       throw error;
     }
   }
