@@ -32,6 +32,9 @@ export class Transcription {
   public type?: TranscriptionType;
   public duration?: number;
 
+  /** URL temporal pre-firmada para reproducir el audio original. Solo disponible si status es completed. No se persiste en base de datos. */
+  public audioUrl?: string;
+
   /**
    * Crea una nueva instancia de `Transcription`.
    *
@@ -99,6 +102,14 @@ export class Transcription {
   public setType(type: TranscriptionType): void {
     this.type = type;
     this.updatedAt = new Date();
+  }
+
+  /**
+   * Establece la URL temporal pre-firmada para reproducir el audio (solo cuando status es completed).
+   * Se genera dinámicamente al consultar, no se persiste.
+   */
+  public setAudioUrl(url: string): void {
+    this.audioUrl = url;
   }
 
   /**

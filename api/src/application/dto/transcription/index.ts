@@ -24,6 +24,23 @@ export interface UploadTranscriptionDTO {
 }
 
 /**
+ * DTO de item de transcripción en la lista.
+ * Incluye audioUrl cuando status es completed (URL presignada para reproducir el audio).
+ */
+export interface TranscriptionListItemDTO {
+  id: string;
+  fileName: string;
+  status: string;
+  type?: string;
+  duration?: number;
+  content?: string;
+  createdAt: string;
+  updatedAt: string;
+  /** URL temporal pre-firmada para reproducir el audio original. Solo disponible si status es completed. */
+  audioUrl?: string;
+}
+
+/**
  * DTO de respuesta con la presigned URL para subir el archivo a S3.
  *
  * El cliente usa `uploadUrl` para hacer PUT directamente a S3.

@@ -48,6 +48,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         createdAt: t.createdAt.toISOString(),
         updatedAt: t.updatedAt.toISOString(),
         content: t.status === "completed" ? t.content : undefined,
+        audioUrl: t.audioUrl,
       })),
       hasMore: result.hasMore,
       totalPages: result.totalPages,

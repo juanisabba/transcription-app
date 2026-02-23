@@ -12,8 +12,10 @@ import {
   type TranscriptionType,
 } from "../../domain/entities/Transcription";
 import type { ITranscriptionRepository } from "../../domain/repositories/ITranscriptionRepository";
+import type { IStorageService } from "../../application/ports/IStorageService";
 
 const DEFAULT_PAGE_SIZE = 10;
+const AUDIO_URL_EXPIRES_IN = 3600; // 1 hora
 
 interface TranscriptionItem {
   userId: string;
@@ -42,7 +44,10 @@ export class TranscriptionRepository implements ITranscriptionRepository {
   private readonly tableName =
     process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-juani";
 
-  constructor(private readonly dynamodbClient: DynamoDBDocumentClient) {}
+  constructor(
+    private readonly dynamodbClient: DynamoDBDocumentClient,
+    private readonly storageService: IStorageService
+  ) {}
 
   async save(transcription: Transcription): Promise<void> {
     try {
@@ -81,7 +86,9 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       if (!result.Item) {
         return null;
       }
-      return this.mapToDomain(result.Item as TranscriptionItem);
+      const entity = this.mapToDomain(result.Item as TranscriptionItem);
+      await this.enrichWithAudioUrlIfCompleted(entity);
+      return entity;
     } catch (error: unknown) {
       console.error("[TranscriptionRepo] findById error:", id, userId, error);
       throw error;
@@ -124,6 +131,9 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       const allItems = (result.Items ?? []).map((item) =>
         this.mapToDomain(item as TranscriptionItem)
       );
+      for (const entity of allItems) {
+        await this.enrichWithAudioUrlIfCompleted(entity);
+      }
 
       const hasMore = allItems.length > pageSize;
       const items = hasMore ? allItems.slice(0, pageSize) : allItems;
@@ -339,6 +349,32 @@ export class TranscriptionRepository implements ITranscriptionRepository {
       item.duration,
       item.type
     );
+  }
+
+  /**
+   * Genera presigned URL de lectura para el audio cuando la transcripción está completada.
+   * La URL no se persiste en DynamoDB; se genera dinámicamente en cada consulta.
+   */
+  private async enrichWithAudioUrlIfCompleted(entity: Transcription): Promise<void> {
+    if (
+      entity.status === "completed" &&
+      entity.s3Path &&
+      entity.s3Path.trim() !== ""
+    ) {
+      try {
+        const url = await this.storageService.generateDownloadPresignedUrl(
+          entity.s3Path,
+          AUDIO_URL_EXPIRES_IN
+        );
+        entity.setAudioUrl(url);
+      } catch (err) {
+        console.warn(
+          "[TranscriptionRepo] Failed to generate audio presigned URL for",
+          entity.id,
+          err
+        );
+      }
+    }
   }
 
   private encodeCursor(key: Record<string, unknown>): string {

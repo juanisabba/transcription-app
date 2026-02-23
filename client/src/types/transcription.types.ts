@@ -23,6 +23,8 @@ export interface Transcription {
   content?: string;
   createdAt: string;
   updatedAt?: string;
+  /** URL temporal pre-firmada para reproducir el audio original. Solo disponible si status es completed. */
+  audioUrl?: string;
 }
 
 export interface UploadTranscriptionRequest {

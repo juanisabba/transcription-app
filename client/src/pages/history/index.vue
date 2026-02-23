@@ -158,6 +158,56 @@
               </td>
               <td class="px-6 py-4 text-sm text-center">
                 <div class="flex items-center justify-center gap-3">
+                  <!-- Reproducir audio (solo si completed y hay audioUrl) -->
+                  <template
+                    v-if="
+                      transcription.status === 'completed' &&
+                      transcription.audioUrl
+                    "
+                  >
+                    <button
+                      type="button"
+                      class="text-indigo-600 hover:text-indigo-800 transition-colors"
+                      title="Reproducir audio"
+                      @click="toggleAudioPlayback(transcription)"
+                    >
+                      <svg
+                        v-if="playingId !== transcription.id"
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <svg
+                        v-else
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </button>
+                  </template>
                   <NuxtLink
                     v-if="transcription.status === 'completed'"
                     :to="`/history/${transcription.id}`"
@@ -267,6 +317,14 @@
       </template>
     </div>
 
+    <!-- Audio player oculto para reproducir transcripciones completadas -->
+    <audio
+      ref="audioPlayerRef"
+      class="hidden"
+      @ended="playingId = null"
+      @pause="playingId = null"
+    />
+
     <!-- Delete confirmation modal -->
     <CommonDeleteConfirmationModal
       v-model="showDeleteModal"
@@ -350,6 +408,27 @@ const handleDownload = async (id: string, fileName: string) => {
 
 const showDeleteModal = ref(false);
 const deleteTargetId = ref<string | null>(null);
+
+// Audio playback
+const audioPlayerRef = ref<HTMLAudioElement | null>(null);
+const playingId = ref<string | null>(null);
+
+function toggleAudioPlayback(transcription: { id: string; audioUrl?: string }) {
+  if (!transcription?.audioUrl) return;
+
+  const audio = audioPlayerRef.value;
+  if (!audio) return;
+
+  if (playingId.value === transcription.id && !audio.paused) {
+    audio.pause();
+    playingId.value = null;
+    return;
+  }
+
+  audio.src = transcription.audioUrl;
+  audio.play().catch(console.error);
+  playingId.value = transcription.id;
+}
 
 const handleDelete = (id: string) => {
   deleteTargetId.value = id;
