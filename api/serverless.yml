@@ -66,7 +66,7 @@ provider:
 functions:
   # ===== HELLO (Test Endpoint) =====
   hello:
-    handler: dist/src/presentation/http/transcription/HelloHandler.handler
+    handler: src/presentation/http/transcription/HelloHandler.handler
     events:
       - http:
           path: hello
@@ -76,7 +76,7 @@ functions:
   # ===== AUTH ENDPOINTS =====
 
   register:
-    handler: dist/src/presentation/http/auth/RegisterHandler.handler
+    handler: src/presentation/http/auth/RegisterHandler.handler
     events:
       - http:
           path: auth/register
@@ -84,7 +84,7 @@ functions:
           cors: true
 
   login:
-    handler: dist/src/presentation/http/auth/LoginHandler.handler
+    handler: src/presentation/http/auth/LoginHandler.handler
     events:
       - http:
           path: auth/login
@@ -92,7 +92,7 @@ functions:
           cors: true
 
   logout:
-    handler: dist/src/presentation/http/auth/LogoutHandler.handler
+    handler: src/presentation/http/auth/LogoutHandler.handler
     events:
       - http:
           path: auth/logout
@@ -103,7 +103,7 @@ functions:
   # ===== TRANSCRIPTION ENDPOINTS =====
 
   uploadTranscription:
-    handler: dist/src/presentation/http/transcription/UploadHandler.handler
+    handler: src/presentation/http/transcription/UploadHandler.handler
     events:
       - http:
           path: transcriptions/upload
@@ -112,7 +112,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   realtimeSession:
-    handler: dist/src/presentation/http/transcription/RealtimeSessionHandler.handler
+    handler: src/presentation/http/transcription/RealtimeSessionHandler.handler
     events:
       - http:
           path: transcriptions/realtime
@@ -121,7 +121,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   realtimeToken:
-    handler: dist/src/presentation/http/transcription/RealtimeTokenHandler.handler
+    handler: src/presentation/http/transcription/RealtimeTokenHandler.handler
     events:
       - http:
           path: transcriptions/realtime/token
@@ -130,7 +130,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   saveRealtimeTranscription:
-    handler: dist/src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
+    handler: src/presentation/http/transcription/SaveRealtimeTranscriptionHandler.handler
     events:
       - http:
           path: transcriptions/realtime/{id}/save
@@ -139,7 +139,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   listTranscriptions:
-    handler: dist/src/presentation/http/transcription/ListTranscriptionsHandler.handler
+    handler: src/presentation/http/transcription/ListTranscriptionsHandler.handler
     events:
       - http:
           path: transcriptions
@@ -148,7 +148,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   statsTranscriptions:
-    handler: dist/src/presentation/http/transcription/StatsHandler.handler
+    handler: src/presentation/http/transcription/StatsHandler.handler
     events:
       - http:
           path: transcriptions/stats
@@ -157,7 +157,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   downloadTranscription:
-    handler: dist/src/presentation/http/transcription/DownloadTranscriptionHandler.handler
+    handler: src/presentation/http/transcription/DownloadTranscriptionHandler.handler
     events:
       - http:
           path: transcriptions/{id}/download
@@ -166,7 +166,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   deleteTranscription:
-    handler: dist/src/presentation/http/transcription/DeleteHandler.handler
+    handler: src/presentation/http/transcription/DeleteHandler.handler
     events:
       - http:
           path: transcriptions/{id}
@@ -175,7 +175,7 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
 
   confirmUpload:
-    handler: dist/src/presentation/http/transcription/ConfirmUploadHandler.handler
+    handler: src/presentation/http/transcription/ConfirmUploadHandler.handler
     events:
       - http:
           path: transcriptions/{id}/confirm
@@ -186,7 +186,7 @@ functions:
   # ===== S3 EVENT TRIGGERS =====
 
   processAudioUpload:
-    handler: dist/src/presentation/events/S3UploadHandler.handler
+    handler: src/presentation/events/S3UploadHandler.handler
     events:
       - s3:
           bucket: !Ref TranscriptionsBucket
@@ -198,25 +198,20 @@ functions:
   # ===== WEBHOOKS =====
 
   speechmaticsWebhook:
-    handler: dist/src/presentation/events/WebhookHandler.handler
+    handler: src/presentation/events/WebhookHandler.handler
     events:
       - http:
           path: webhook/speechmatics
           method: post
 
-build:
-  esbuild:
-    bundle: true
-    # Incluir @aws-sdk y bcryptjs en el bundle (no excluirlos)
-    exclude: []
-    minify: false
-
 package:
+  individually: true
   patterns:
-    - "dist/**"
-    - "!src/**"
+    - "!**"
+    - "src/**"
 
 plugins:
+  - serverless-esbuild
   - serverless-offline
   - serverless-dynamodb-local
   - serverless-dotenv-plugin
@@ -383,6 +378,12 @@ resources:
       Value: !Ref CognitoUserPoolClient
 
 custom:
+  esbuild:
+    bundle: true
+    minify: false
+    platform: node
+    target: node18
+    exclude: []
   cognitoUserPoolArn:
     prod: "arn:aws:cognito-idp:eu-north-1:273386478728:userpool/eu-north-1_5WlAlQQHu"
     dev: !GetAtt CognitoUserPool.Arn
