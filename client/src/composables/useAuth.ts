@@ -5,6 +5,7 @@ import { getApiErrorMessage } from "../utils/errorUtils";
 export const useAuth = () => {
   const authStore = useAuthStore();
   const uiStore = useUiStore();
+  const transcriptionStore = useTranscriptionStore();
   const router = useRouter();
 
   const login = async (credentials: LoginRequest) => {
@@ -50,12 +51,14 @@ export const useAuth = () => {
       uiStore.setLoading(true);
       await authService.logout();
       authStore.logout();
+      transcriptionStore.clear();
       uiStore.setSuccess("Sesión cerrada");
       await router.push("/");
     } catch (error: unknown) {
       console.error("Error en logout:", error);
       uiStore.setError("Error al cerrar sesión");
       authStore.logout();
+      transcriptionStore.clear();
     } finally {
       uiStore.setLoading(false);
     }

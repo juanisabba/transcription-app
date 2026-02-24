@@ -41,7 +41,9 @@ api.interceptors.response.use(
     const err = error as { response?: { status?: number } };
     if (err.response?.status === 401) {
       const authStore = useAuthStore();
+      const transcriptionStore = useTranscriptionStore();
       authStore.logout();
+      transcriptionStore.clear();
       navigateTo("/auth/login");
     }
     return Promise.reject(error);
