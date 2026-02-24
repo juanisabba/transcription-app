@@ -10,13 +10,13 @@ Plataforma de transcripción de audio en la nube desarrollada para la prueba té
 
 ## 📸 Capturas de pantalla
 
-| Funcionalidad | Captura |
-|---------------|---------|
-| **Login** | ![Login](docs/screenshots/login.png) |
-| **Registro** | ![Register](docs/screenshots/register.png) |
-| **Subida de archivo** | ![Upload](docs/screenshots/upload.png) |
+| Funcionalidad                    | Captura                                    |
+| -------------------------------- | ------------------------------------------ |
+| **Login**                        | ![Login](docs/screenshots/login.png)       |
+| **Registro**                     | ![Register](docs/screenshots/register.png) |
+| **Subida de archivo**            | ![Upload](docs/screenshots/upload.png)     |
 | **Transcripción en tiempo real** | ![Realtime](docs/screenshots/realtime.png) |
-| **Historial** | ![History](docs/screenshots/history.png) |
+| **Historial**                    | ![History](docs/screenshots/history.png)   |
 
 > **Nota:** Sube las capturas de pantalla en `docs/screenshots/` con los nombres indicados (login.png, register.png, upload.png, realtime.png, history.png).
 
@@ -52,28 +52,28 @@ Plataforma de transcripción de audio en la nube desarrollada para la prueba té
 
 ### Backend
 
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| **Node.js** | 18.x | Runtime |
-| **TypeScript** | 5.x | Tipado estático |
-| **Serverless Framework** | 4.x | IaC (Infraestructura como Código), orquestación de Lambdas |
-| **AWS Lambda** | - | Unidades computacionales serverless |
-| **DynamoDB** | - | Base de datos NoSQL |
-| **S3** | - | Almacenamiento de archivos de audio |
-| **Cognito** | - | Autenticación y gestión de usuarios |
-| **Jest** | 29.x | Pruebas unitarias y de integración |
+| Tecnología               | Versión | Propósito                                                  |
+| ------------------------ | ------- | ---------------------------------------------------------- |
+| **Node.js**              | 18.x    | Runtime                                                    |
+| **TypeScript**           | 5.x     | Tipado estático                                            |
+| **Serverless Framework** | 4.x     | IaC (Infraestructura como Código), orquestación de Lambdas |
+| **AWS Lambda**           | -       | Unidades computacionales serverless                        |
+| **DynamoDB**             | -       | Base de datos NoSQL                                        |
+| **S3**                   | -       | Almacenamiento de archivos de audio                        |
+| **Cognito**              | -       | Autenticación y gestión de usuarios                        |
+| **Jest**                 | 29.x    | Pruebas unitarias y de integración                         |
 
 ### Frontend
 
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| **Nuxt.js** | 4.x | Framework full-stack Vue |
-| **TypeScript** | - | Tipado estático |
-| **Tailwind CSS** | 6.x | Framework de estilos (vía @nuxtjs/tailwindcss) |
-| **Pinia** | 3.x | Gestión de estado |
-| **VueUse** | 14.x | Utilidades reactivas |
-| **Vitest** | 2.x | Pruebas unitarias |
-| **Cypress** | 13.x | Pruebas E2E |
+| Tecnología       | Versión | Propósito                                      |
+| ---------------- | ------- | ---------------------------------------------- |
+| **Nuxt.js**      | 4.x     | Framework full-stack Vue                       |
+| **TypeScript**   | -       | Tipado estático                                |
+| **Tailwind CSS** | 6.x     | Framework de estilos (vía @nuxtjs/tailwindcss) |
+| **Pinia**        | 3.x     | Gestión de estado                              |
+| **VueUse**       | 14.x    | Utilidades reactivas                           |
+| **Vitest**       | 2.x     | Pruebas unitarias                              |
+| **Cypress**      | 13.x    | Pruebas E2E                                    |
 
 ### Servicios externos
 
@@ -127,12 +127,12 @@ DynamoDB no soporta offset de forma eficiente. Con cursor-based pagination:
 
 ### Patrones usados
 
-| Patrón | Uso |
-|--------|-----|
-| **Repository** | Abstracción del acceso a datos (DynamoDB) |
-| **Adapter** | Integración con Cognito, S3, Speechmatics |
-| **Use Case** | Orquestación de la lógica de negocio |
-| **DTO** | Objetos de transferencia entre capas |
+| Patrón                        | Uso                                            |
+| ----------------------------- | ---------------------------------------------- |
+| **Repository**                | Abstracción del acceso a datos (DynamoDB)      |
+| **Adapter**                   | Integración con Cognito, S3, Speechmatics      |
+| **Use Case**                  | Orquestación de la lógica de negocio           |
+| **DTO**                       | Objetos de transferencia entre capas           |
 | **Inyección de dependencias** | Use cases reciben repositorios por constructor |
 
 ---
@@ -149,15 +149,15 @@ El proyecto usa **Domain-Driven Design** con bounded contexts:
 
 La carpeta `docs/` contiene documentos pensados para que los agentes de IA mantengan coherencia con la arquitectura:
 
-| Documento | Contenido |
-|-----------|-----------|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Arquitectura hexagonal, flujos, ADRs, stack |
-| [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) | Estructura del backend (dominio, aplicación, infraestructura) y frontend |
-| [`docs/PROJECT_STRUCTURE_CLIENT.md`](docs/PROJECT_STRUCTURE_CLIENT.md) | Árbol del cliente Nuxt y convenciones |
-| [`docs/API_SPECIFICATION.md`](docs/API_SPECIFICATION.md) | Endpoints, parámetros, códigos de error |
-| [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md) | Esquema de tablas DynamoDB |
-| [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md) | Tipado, nombres, errores, path aliases |
-| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Despliegue a producción y verificación |
+| Documento                                                              | Contenido                                                                |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)                         | Arquitectura hexagonal, flujos, ADRs, stack                              |
+| [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md)               | Estructura del backend (dominio, aplicación, infraestructura) y frontend |
+| [`docs/PROJECT_STRUCTURE_CLIENT.md`](docs/PROJECT_STRUCTURE_CLIENT.md) | Árbol del cliente Nuxt y convenciones                                    |
+| [`docs/API_SPECIFICATION.md`](docs/API_SPECIFICATION.md)               | Endpoints, parámetros, códigos de error                                  |
+| [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)                   | Esquema de tablas DynamoDB                                               |
+| [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md)                 | Tipado, nombres, errores, path aliases                                   |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)                             | Despliegue a producción y verificación                                   |
 
 Estos archivos sirven como contexto para que las herramientas de IA respeten las reglas del proyecto y generen código coherente.
 
@@ -165,13 +165,13 @@ Estos archivos sirven como contexto para que las herramientas de IA respeten las
 
 ## ☁️ Servicios AWS
 
-| Servicio | Uso |
-|----------|-----|
-| **Lambda** | API REST (auth, transcripciones, listado, descarga, webhooks), procesamiento de eventos S3 |
-| **API Gateway** | Exposición HTTP de las Lambdas, CORS, autorización Cognito |
-| **DynamoDB** | Tablas: `vocali-users`, `vocali-transcriptions`, `vocali-job-mapping` |
-| **S3** | Bucket para audios (`uploads/`) y transcripciones finales |
-| **Cognito** | User Pool para registro, login y JWT |
+| Servicio        | Uso                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| **Lambda**      | API REST (auth, transcripciones, listado, descarga, webhooks), procesamiento de eventos S3 |
+| **API Gateway** | Exposición HTTP de las Lambdas, CORS, autorización Cognito                                 |
+| **DynamoDB**    | Tablas: `vocali-users`, `vocali-transcriptions`, `vocali-job-mapping`                      |
+| **S3**          | Bucket para audios (`uploads/`) y transcripciones finales                                  |
+| **Cognito**     | User Pool para registro, login y JWT                                                       |
 
 ### Tablas DynamoDB
 
@@ -192,7 +192,7 @@ Estos archivos sirven como contexto para que las herramientas de IA respeten las
 ### 1. Clonar e instalar dependencias
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/juanisabba/transcription-app.git
 cd transcription-app
 pnpm install
 ```
@@ -382,18 +382,18 @@ transcription-app/
 
 ## 📖 API
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/auth/register` | Registro |
-| POST | `/auth/login` | Login |
-| POST | `/auth/logout` | Logout |
-| POST | `/transcriptions/upload` | URL pre-firmada para subir audio |
-| POST | `/transcriptions/{id}/confirm` | Confirmar subida |
-| POST | `/transcriptions/realtime` | Sesión transcripción en tiempo real |
-| POST | `/transcriptions/realtime/{id}/save` | Guardar transcripción en tiempo real |
-| GET | `/transcriptions` | Listar transcripciones (paginado) |
-| GET | `/transcriptions/{id}/download` | URL de descarga |
-| DELETE | `/transcriptions/{id}` | Eliminar transcripción |
+| Método | Endpoint                             | Descripción                          |
+| ------ | ------------------------------------ | ------------------------------------ |
+| POST   | `/auth/register`                     | Registro                             |
+| POST   | `/auth/login`                        | Login                                |
+| POST   | `/auth/logout`                       | Logout                               |
+| POST   | `/transcriptions/upload`             | URL pre-firmada para subir audio     |
+| POST   | `/transcriptions/{id}/confirm`       | Confirmar subida                     |
+| POST   | `/transcriptions/realtime`           | Sesión transcripción en tiempo real  |
+| POST   | `/transcriptions/realtime/{id}/save` | Guardar transcripción en tiempo real |
+| GET    | `/transcriptions`                    | Listar transcripciones (paginado)    |
+| GET    | `/transcriptions/{id}/download`      | URL de descarga                      |
+| DELETE | `/transcriptions/{id}`               | Eliminar transcripción               |
 
 Detalles en [`docs/API_SPECIFICATION.md`](docs/API_SPECIFICATION.md).
 

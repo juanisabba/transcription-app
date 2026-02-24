@@ -26,6 +26,23 @@
           </NuxtLink>
         </div>
 
+        <!-- Audio player (solo si completed y hay audioUrl) -->
+        <div
+          v-if="
+            transcription.status === 'completed' && transcription.audioUrl
+          "
+          class="bg-white rounded-lg shadow-lg p-6"
+        >
+          <p class="text-sm font-medium text-gray-600 mb-3">
+            Reproducir audio original
+          </p>
+          <audio
+            :src="transcription.audioUrl"
+            controls
+            class="w-full max-w-md h-10"
+          />
+        </div>
+
         <!-- Transcription Content -->
         <div class="bg-white rounded-lg shadow-lg p-8">
           <div class="prose max-w-none">
