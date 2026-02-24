@@ -14,6 +14,7 @@
     "dev:api": "pnpm --filter api run dev",
     "dev:client": "pnpm --filter client run dev",
     "dev": "concurrently \"pnpm:dev:api\" \"pnpm:dev:client\"",
+    "dev:docker": "docker compose up",
     "build": "pnpm --filter api run build && pnpm --filter client run build",
     "test": "pnpm --filter api run test && pnpm --filter client run test",
     "test:coverage:api": "pnpm --filter api run test:coverage",

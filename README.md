@@ -223,20 +223,39 @@ DYNAMODB_JOB_MAPPING_TABLE=vocali-job-mapping-dev
 
 ### Levantar con Docker
 
-#### DynamoDB Local (para desarrollo)
+#### Levantar todo (DynamoDB + API + Cliente) con un solo comando
+
+```bash
+# 1. Configurar variables de entorno (solo la primera vez)
+cp api/.env.example api/.env.local
+cp client/.env.example client/.env
+
+# 2. Levantar la aplicación completa
+pnpm run dev:docker
+# o: docker compose up
+```
+
+- **Cliente:** http://localhost:3000
+- **API:** http://localhost:3001
+
+La primera ejecución puede tardar 1-2 minutos (instalación de dependencias). Las siguientes serán más rápidas gracias al volumen de caché.
+
+#### DynamoDB Local (solo para desarrollo manual)
 
 ```bash
 cd api
 pnpm run dynamo:up
 ```
 
-> Si usas **Docker** en lugar de Podman, ejecuta manualmente: `docker compose up -d dynamodb-local` desde `api/`. El contenedor DynamoDB escucha en `http://localhost:8000`.
+El contenedor DynamoDB escucha en `http://localhost:8000`.
 
 #### Inicializar tablas locales
 
 ```bash
 pnpm run setup:local-db
 ```
+
+> Solo necesario si levantas DynamoDB manualmente. Si usas `pnpm run dev:docker`, las tablas se crean automáticamente al iniciar.
 
 #### Imagen de build (lint + build)
 

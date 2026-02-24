@@ -3,6 +3,7 @@
  * Crea las tablas:
  * - vocali-users-dev: UserRepository.findByEmail (GSI email-index)
  * - vocali-transcriptions-dev: TranscriptionRepository.findByUserId (PK: userId, SK: id)
+ * - vocali-job-mapping-dev: JobMappingRepository (PK: jobId)
  *
  * Uso: pnpm run setup:local-db
  * Requiere: DynamoDB Local corriendo en http://localhost:8000
@@ -19,6 +20,8 @@ const ENDPOINT = process.env.DYNAMODB_ENDPOINT ?? "http://localhost:8000";
 const USERS_TABLE = process.env.DYNAMODB_USERS_TABLE ?? "vocali-users-dev";
 const TRANSCRIPTIONS_TABLE =
   process.env.DYNAMODB_TRANSCRIPTIONS_TABLE ?? "vocali-transcriptions-dev";
+const JOB_MAPPING_TABLE =
+  process.env.DYNAMODB_JOB_MAPPING_TABLE ?? "vocali-job-mapping-dev";
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION ?? "eu-west-1",
@@ -85,6 +88,13 @@ async function main() {
         Projection: { ProjectionType: "ALL" },
       },
     ],
+  });
+
+  await ensureTable(JOB_MAPPING_TABLE, {
+    TableName: JOB_MAPPING_TABLE,
+    BillingMode: "PAY_PER_REQUEST",
+    AttributeDefinitions: [{ AttributeName: "jobId", AttributeType: "S" }],
+    KeySchema: [{ AttributeName: "jobId", KeyType: "HASH" }],
   });
 }
 
