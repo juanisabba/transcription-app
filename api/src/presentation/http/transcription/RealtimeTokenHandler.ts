@@ -4,19 +4,11 @@ import { speechMaticsRealtimeAdapter } from "../../../infrastructure/adapters/ex
 import { CognitoAuthAdapter } from "../../../infrastructure/adapters/auth";
 import { CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 import { AppError, UnauthorizedError } from "../../../shared/errors";
+import { getBearerToken } from "../../../shared/utils/auth";
 import { apiResponse } from "../helpers/responseHelper";
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
 const useCase = new GetRealtimeTokenUseCase(speechMaticsRealtimeAdapter);
-
-function getBearerToken(event: { headers?: Record<string, string | undefined> }): string | null {
-  const auth = event.headers?.Authorization ?? event.headers?.authorization ?? "";
-  if (!auth.startsWith("Bearer ")) {
-    return null;
-  }
-  const token = auth.slice(7).trim();
-  return token || null;
-}
 
 /**
  * POST /transcriptions/realtime/token

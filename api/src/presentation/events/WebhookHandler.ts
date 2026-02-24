@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { logger } from "../../shared/logger";
 import type { APIGatewayProxyHandler, APIGatewayProxyResult } from "aws-lambda";
 import { ProcessTranscriptionResultUseCase } from "../../application/use-cases/transcription/ProcessTranscriptionResultUseCase";
 import { transcriptionRepository } from "../../infrastructure/repositories/transcriptionRepositoryInstance";
@@ -100,7 +101,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     return jsonResponse(200, { ok: true });
   } catch (err) {
-    console.error("[WebhookHandler] unexpected error:", err);
+    logger.error("[WebhookHandler] unexpected error", { error: err instanceof Error ? err.message : String(err) });
     return jsonResponse(502, { error: "Internal webhook processing error" });
   }
 };

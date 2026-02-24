@@ -10,6 +10,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from "../../../shared/errors";
+import { getBearerToken } from "../../../shared/utils/auth";
 import { isValidUuidV4 } from "../../../shared/utils/validation";
 import { apiResponse } from "../helpers/responseHelper";
 
@@ -27,15 +28,6 @@ function repairUtf8Mojibake(str: string): string {
 
 const authService = new CognitoAuthAdapter(new CognitoIdentityProviderClient({}));
 const useCase = new SaveRealtimeTranscriptionUseCase(transcriptionRepository, storageService);
-
-function getBearerToken(event: { headers?: Record<string, string | undefined> }): string | null {
-  const auth = event.headers?.Authorization ?? event.headers?.authorization ?? "";
-  if (!auth.startsWith("Bearer ")) {
-    return null;
-  }
-  const token = auth.slice(7).trim();
-  return token || null;
-}
 
 /**
  * Obtiene el userId de forma segura.

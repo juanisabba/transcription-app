@@ -32,7 +32,7 @@ export class CognitoAuthAdapter implements IAuthService {
           Username: email,
           Password: password,
           UserAttributes: [{ Name: "email", Value: email }],
-        }),
+        })
       );
 
       const userId = response.UserSub;
@@ -46,7 +46,7 @@ export class CognitoAuthAdapter implements IAuthService {
           new AdminConfirmSignUpCommand({
             UserPoolId: this.userPoolId,
             Username: email,
-          }),
+          })
         );
       }
 
@@ -62,10 +62,7 @@ export class CognitoAuthAdapter implements IAuthService {
     }
   }
 
-  async authenticateWithPassword(
-    email: string,
-    password: string,
-  ): Promise<AuthTokens> {
+  async authenticateWithPassword(email: string, password: string): Promise<AuthTokens> {
     try {
       const response = await this.cognitoClient.send(
         new InitiateAuthCommand({
@@ -75,7 +72,7 @@ export class CognitoAuthAdapter implements IAuthService {
             USERNAME: email,
             PASSWORD: password,
           },
-        }),
+        })
       );
 
       const result = response.AuthenticationResult;
@@ -83,7 +80,9 @@ export class CognitoAuthAdapter implements IAuthService {
         throw new UnauthorizedError("No se recibieron tokens de Cognito");
       }
       if (!result.IdToken) {
-        throw new UnauthorizedError("Cognito no devolvió IdToken (requerido por API Gateway Authorizer)");
+        throw new UnauthorizedError(
+          "Cognito no devolvió IdToken (requerido por API Gateway Authorizer)"
+        );
       }
 
       return {
@@ -127,9 +126,7 @@ export class CognitoAuthAdapter implements IAuthService {
         email?: string;
         "cognito:username"?: string;
       }
-      const payload = JSON.parse(
-        Buffer.from(parts[1], "base64").toString()
-      ) as JwtPayload;
+      const payload = JSON.parse(Buffer.from(parts[1], "base64").toString()) as JwtPayload;
 
       return Promise.resolve({
         sub: payload.sub ?? "",
@@ -141,9 +138,7 @@ export class CognitoAuthAdapter implements IAuthService {
     }
   }
 
-  async refreshAccessToken(
-    refreshToken: string,
-  ): Promise<{ accessToken: string }> {
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
     if (!refreshToken) {
       throw new UnauthorizedError("Token de refresco requerido");
     }
@@ -156,7 +151,7 @@ export class CognitoAuthAdapter implements IAuthService {
           AuthParameters: {
             REFRESH_TOKEN: refreshToken,
           },
-        }),
+        })
       );
 
       const result = response.AuthenticationResult;
@@ -173,9 +168,7 @@ export class CognitoAuthAdapter implements IAuthService {
 
   async logout(accessToken: string): Promise<void> {
     try {
-      await this.cognitoClient.send(
-        new GlobalSignOutCommand({ AccessToken: accessToken }),
-      );
+      await this.cognitoClient.send(new GlobalSignOutCommand({ AccessToken: accessToken }));
     } catch (error: unknown) {
       console.error(`[Cognito.logout] Error:`, getErrorMessage(error));
       throw error;
